@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPHost.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.Common.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPCommunity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

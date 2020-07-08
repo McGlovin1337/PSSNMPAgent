@@ -14,9 +14,13 @@ namespace PSSNMPAgent.Common
         public string AccessRights { get; set; }
     }
 
+    public class SNMPHost
+    {
+        public string Host { get; set; }
+    }
+
     public class SNMPAgent
     {
-        public string SNMPHosts { get; set; }
         public string TrapCommunities { get; set; }
         public string TrapHosts { get; set; }
         public bool EnableAuthTraps { get; set; }
@@ -29,6 +33,7 @@ namespace PSSNMPAgent.Common
     {
         private string regRootSubKey = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters";
         private string regCommunities = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\ValidCommunities";
+        private string regHosts = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers";
 
         public string RegRootSubKey
         {
@@ -38,6 +43,11 @@ namespace PSSNMPAgent.Common
         public string RegCommunities
         {
             get { return regCommunities; }
+        }
+
+        public string RegHosts
+        {
+            get { return regHosts; }
         }
 
         public static void ServiceCheck()
