@@ -45,12 +45,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PSSNMPAgent.Common.cs" />
-    <Compile Include="PSSNMPAgent.GetSNMPCommunity.cs" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.Common.cs" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPCommunity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="PSSNMPAgent\packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
