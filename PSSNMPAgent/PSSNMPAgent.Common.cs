@@ -19,14 +19,24 @@ namespace PSSNMPAgent.Common
         public string Host { get; set; }
     }
 
-    public class SNMPAgent
+    public class SNMPTrap
     {
-        public string TrapCommunities { get; set; }
-        public string TrapHosts { get; set; }
+        public string Community { get; set; }
+        public string Destination { get; set; }
+    }
+
+    public class SNMPProperties
+    {
         public bool EnableAuthTraps { get; set; }
         public int NameResolutionRetries { get; set; }
         public string SysContact { get; set; }
         public string SysLocation { get; set; }
+        public bool SvcPhysical { get; set; }
+        public bool SvcApplications { get; set; }
+        public bool SvcDatalink { get; set; }
+        public bool SvcInternet { get; set; }
+        public bool SvcEndToEnd { get; set; }
+
     }
 
     public class SNMPAgentCommon
@@ -34,6 +44,8 @@ namespace PSSNMPAgent.Common
         private string regRootSubKey = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters";
         private string regCommunities = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\ValidCommunities";
         private string regHosts = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers";
+        private string regTraps = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\TrapConfiguration";
+        private string regRFC1156 = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\RFC1156Agent";
 
         public string RegRootSubKey
         {
@@ -48,6 +60,16 @@ namespace PSSNMPAgent.Common
         public string RegHosts
         {
             get { return regHosts; }
+        }
+
+        public string RegTraps
+        {
+            get { return regTraps; }
+        }
+
+        public string RegRFC1156
+        {
+            get { return regRFC1156; }
         }
 
         public static void ServiceCheck()

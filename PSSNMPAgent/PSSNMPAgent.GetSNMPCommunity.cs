@@ -3,7 +3,6 @@ using System.Linq;
 using System.Management.Automation;
 using PSSNMPAgent.Common;
 using Microsoft.Win32;
-using System.Text.RegularExpressions;
 
 namespace GetSNMPCommunity.Cmd
 {
@@ -37,13 +36,13 @@ namespace GetSNMPCommunity.Cmd
             if (results.Count() > 0)
             {
                 if (Communities != null)
-                {
-                    results = results.Where(community => Regex.IsMatch(community.Community, string.Format("^(?:{0})", string.Join("|", Communities))));
+                {                    
+                    results = results.Where(community => Communities.Contains(community.Community));
                 }
 
                 if (MyInvocation.BoundParameters.ContainsKey("AccessRights"))
                 {
-                    results = results.Where(access => Regex.IsMatch(access.AccessRights, string.Format("^(?:{0})", string.Join("|", AccessRights))));
+                    results = results.Where(access => AccessRights.Contains(access.AccessRights));
                 }
             }
             else

@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPTrap.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPHost.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.Common.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPCommunity.cs" />
@@ -52,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="PSSNMPAgent\packages.config" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPProperty.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
