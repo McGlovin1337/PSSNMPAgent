@@ -49,25 +49,19 @@ namespace RemoveSNMPHost.cmd
                 throw new Exception("Host list is empty, no hosts to remove");
             }
 
-            if (MyInvocation.BoundParameters.ContainsKey("RemoveAllHosts"))
-            {
-                RemoveSNMPHosts(results);
-            }
-            else
+            if (!MyInvocation.BoundParameters.ContainsKey("RemoveAllHosts"))
             {
                 string[] LowerHost = Array.ConvertAll(Hosts, host => host.ToLower());
 
                 results = results.Where(result => LowerHost.Contains(result.Host.ToLower()));
 
-                if (results.Count() > 0 && results.Count() <= Hosts.Count())
-                {
-                    RemoveSNMPHosts(results);
-                }
-                else
+                if (results.Count() == 0)
                 {
                     throw new Exception("None of the specified hosts were found");
                 }
             }
+
+            RemoveSNMPHosts(results);
 
             _SNMPHosts = GetSNMPHosts();
 
@@ -84,7 +78,6 @@ namespace RemoveSNMPHost.cmd
             {
                 string[] LowerHost = Array.ConvertAll(Hosts, host => host.ToLower());
 
-
                 if (results.Count() > 0)
                 {
                     results = results.Where(result => LowerHost.Contains(result.Host.ToLower()));
@@ -97,6 +90,11 @@ namespace RemoveSNMPHost.cmd
             }
             else
             {
+                WriteVerbose("Failed to remove the following hosts:");
+                foreach (var result in results)
+                {
+                    WriteVerbose(result.Host);
+                }
                 throw new Exception("Some hosts failed to remove");
             }
 
