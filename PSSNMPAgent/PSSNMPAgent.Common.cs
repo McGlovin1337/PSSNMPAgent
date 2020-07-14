@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ServiceProcess;
 using System.Collections.ObjectModel;
+using Microsoft.Win32;
 
 namespace PSSNMPAgent.Common
 {
@@ -109,6 +110,71 @@ namespace PSSNMPAgent.Common
         public ReadOnlyCollection<communityAccess> CommunityAccess
         {
             get { return new ReadOnlyCollection<communityAccess>(_communityAccess); }
+        }
+
+        public static IEnumerable<SNMPProperties> GetSNMPProperties()
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+            RegistryKey RegRoot = Registry.LocalMachine.OpenSubKey(common.RegRootSubKey);
+            RegistryKey RegRFC = Registry.LocalMachine.OpenSubKey(common.RegRFC1156);
+
+            List<SNMPProperties> properties = new List<SNMPProperties>();
+
+            bool AuthTraps = Convert.ToBoolean((int)RegRoot.GetValue("EnableAuthenticationTraps"));
+            int NameRetries = (int)RegRoot.GetValue("NameResolutionRetries");
+            string Contact = (string)RegRFC.GetValue("sysContact");
+            string Location = (string)RegRFC.GetValue("sysLocation");
+            int SvcValue = (int)RegRFC.GetValue("sysServices");
+
+            RegRFC.Close();
+            RegRoot.Close();
+
+            bool SvcPhy = false, SvcDat = false, SvcInt = false, SvcEnd = false, SvcApp = false;
+
+            if (SvcValue >= 64)
+            {
+                SvcApp = true;
+                SvcValue = SvcValue - 64;
+            }
+            SvcEnd = (SvcValue >= 8 && SvcValue < 64) ? true : false;
+            if (SvcValue == 1 || SvcValue == 9) { SvcPhy = true; }
+            if (SvcValue == 2 || SvcValue == 10) { SvcDat = true; }
+            if (SvcValue == 4 || SvcValue == 12) { SvcInt = true; }
+            if (SvcValue == 3 || SvcValue == 11) { SvcPhy = true; SvcDat = true; }
+            if (SvcValue == 5 || SvcValue == 13) { SvcPhy = true; SvcInt = true; }
+            if (SvcValue == 6 || SvcValue == 14) { SvcDat = true; SvcInt = true; }
+            if (SvcValue == 7 || SvcValue == 15) { SvcPhy = true; SvcDat = true; SvcInt = true; }
+
+            properties.Add(new SNMPProperties
+            {
+                EnableAuthTraps = AuthTraps,
+                NameResolutionRetries = NameRetries,
+                SysContact = Contact,
+                SysLocation = Location,
+                SvcPhysical = SvcPhy,
+                SvcDatalink = SvcDat,
+                SvcInternet = SvcInt,
+                SvcEndToEnd = SvcEnd,
+                SvcApplications = SvcApp
+            });
+
+            return properties;
+        }
+    }
+
+    public class SNMPTrapComparer : IEqualityComparer<SNMPTrap>
+    {
+        public bool Equals(SNMPTrap trap1, SNMPTrap trap2)
+        {
+            if (trap1.Community == trap2.Community && trap1.Destination == trap2.Destination)
+            {
+                return true;
+            }
+            else return false;
+        }
+        public int GetHashCode(SNMPTrap obj)
+        {
+            return obj.Destination.GetHashCode();
         }
     }
 }
