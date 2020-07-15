@@ -56,7 +56,7 @@ namespace RemoveSNMPTrap.cmd
             }
 
             _DelTrap = delTraps;
-            _SNMPTrap = GetSNMPTraps();
+            _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
 
             base.BeginProcessing();
         }
@@ -78,7 +78,7 @@ namespace RemoveSNMPTrap.cmd
                 DelTraps(removeTraps);
             }
 
-            _SNMPTrap = GetSNMPTraps();
+            _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
 
             base.ProcessRecord();
         }
@@ -110,29 +110,6 @@ namespace RemoveSNMPTrap.cmd
             base.EndProcessing();
         }
 
-        private static IEnumerable<SNMPTrap> GetSNMPTraps()
-        {
-            SNMPAgentCommon common = new SNMPAgentCommon();
-            RegistryKey RegTrap = Registry.LocalMachine.OpenSubKey(common.RegTraps);
-
-            List<SNMPTrap> traps = new List<SNMPTrap>();
-
-            foreach (string key in RegTrap.GetSubKeyNames())
-            {
-                string subkey = common.RegTraps + @"\" + key;
-                RegistryKey RegTrapDest = Registry.LocalMachine.OpenSubKey(subkey);
-                foreach (string value in RegTrapDest.GetValueNames())
-                {
-                    string destination = (string)RegTrapDest.GetValue(value);
-                    traps.Add(new SNMPTrap { Community = key, Destination = destination });
-                }
-                RegTrapDest.Close();
-            }
-            RegTrap.Close();
-
-            return traps;
-        }
-
         private static void DelCommunity(string[] Community)
         {
             SNMPAgentCommon common = new SNMPAgentCommon();
@@ -158,6 +135,7 @@ namespace RemoveSNMPTrap.cmd
                     string value = (string)SubKey.GetValue(valueName);
                     values.Add(new RegTrapValueMap { SubKey = key, ValueName = valueName, Value = value });
                 }
+                SubKey.Close();
             }
 
             foreach (var trap in delTraps)
@@ -166,6 +144,7 @@ namespace RemoveSNMPTrap.cmd
                 RegistryKey SubKey = Registry.LocalMachine.CreateSubKey(keyTarget);
                 var delTarget = values.Single(value => value.SubKey == trap.Community && value.Value == trap.Destination);
                 SubKey.DeleteValue(delTarget.ValueName);
+                SubKey.Close();
             }
         }
 

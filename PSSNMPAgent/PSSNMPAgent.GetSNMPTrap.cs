@@ -36,7 +36,7 @@ namespace GetSNMPTrap.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
-            _SNMPTrap = GetSNMPTraps();
+            _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
 
             base.BeginProcessing();
         }
@@ -61,29 +61,6 @@ namespace GetSNMPTrap.cmd
             results.ToList().ForEach(WriteObject);
 
             base.ProcessRecord();
-        }
-
-        private static IEnumerable<SNMPTrap> GetSNMPTraps()
-        {
-            SNMPAgentCommon common = new SNMPAgentCommon();
-            RegistryKey RegTrap = Registry.LocalMachine.OpenSubKey(common.RegTraps);
-
-            List<SNMPTrap> traps = new List<SNMPTrap>();
-
-            foreach (string key in RegTrap.GetSubKeyNames())
-            {
-                string subkey = common.RegTraps + @"\" + key;
-                RegistryKey RegTrapDest = Registry.LocalMachine.OpenSubKey(subkey);
-                foreach (string value in RegTrapDest.GetValueNames())
-                {
-                    string destination = (string)RegTrapDest.GetValue(value);
-                    traps.Add(new SNMPTrap { Community = key, Destination = destination });
-                }
-                RegTrapDest.Close();
-            }
-            RegTrap.Close();
-
-            return traps;
         }
     }
 }

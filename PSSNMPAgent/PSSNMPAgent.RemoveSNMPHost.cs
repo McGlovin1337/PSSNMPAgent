@@ -35,7 +35,7 @@ namespace RemoveSNMPHost.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
-            _SNMPHosts = GetSNMPHosts();
+            _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
 
             base.BeginProcessing();
         }
@@ -63,7 +63,7 @@ namespace RemoveSNMPHost.cmd
 
             RemoveSNMPHosts(results);
 
-            _SNMPHosts = GetSNMPHosts();
+            _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
 
             base.ProcessRecord();
         }
@@ -99,23 +99,6 @@ namespace RemoveSNMPHost.cmd
             }
 
             base.EndProcessing();
-        }
-
-        private static IEnumerable<SNMPHost> GetSNMPHosts()
-        {
-            SNMPAgentCommon common = new SNMPAgentCommon();
-            RegistryKey RegHosts = Registry.LocalMachine.OpenSubKey(common.RegHosts);
-
-            List<SNMPHost> hosts = new List<SNMPHost>();
-
-            foreach (string value in RegHosts.GetValueNames())
-            {
-                string host = (string)RegHosts.GetValue(value);
-                hosts.Add(new SNMPHost { Host = host });
-            }
-            RegHosts.Close();
-
-            return hosts;
         }
 
         private static void RemoveSNMPHosts(IEnumerable<SNMPHost> Hosts)

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.ServiceProcess;
 using System.Collections.ObjectModel;
 using Microsoft.Win32;
@@ -42,11 +40,11 @@ namespace PSSNMPAgent.Common
 
     public class SNMPAgentCommon
     {
-        private string regRootSubKey = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters";
-        private string regCommunities = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\ValidCommunities";
-        private string regHosts = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers";
-        private string regTraps = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\TrapConfiguration";
-        private string regRFC1156 = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\RFC1156Agent";
+        private const string regRootSubKey = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters";
+        private const string regCommunities = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\ValidCommunities";
+        private const string regHosts = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers";
+        private const string regTraps = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\TrapConfiguration";
+        private const string regRFC1156 = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters\RFC1156Agent";
 
         public string RegRootSubKey
         {
@@ -110,6 +108,65 @@ namespace PSSNMPAgent.Common
         public ReadOnlyCollection<communityAccess> CommunityAccess
         {
             get { return new ReadOnlyCollection<communityAccess>(_communityAccess); }
+        }
+
+        public static IEnumerable<SNMPCommunity> GetCommunities()
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+            RegistryKey RegCommunities = Registry.LocalMachine.OpenSubKey(common.RegCommunities);
+
+            List<SNMPCommunity> communities = new List<SNMPCommunity>();
+
+            foreach (string Community in RegCommunities.GetValueNames())
+            {
+                int accessValue = (int)RegCommunities.GetValue(Community);
+                var accessType = common.CommunityAccess.Single(a => a.dWordVal == accessValue);
+                string access = accessType.Access;
+                communities.Add(new SNMPCommunity { Community = Community, AccessRights = access });
+            }
+            RegCommunities.Close();
+
+            return communities;
+        }
+
+        public static IEnumerable<SNMPHost> GetSNMPHosts()
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+            RegistryKey RegHosts = Registry.LocalMachine.OpenSubKey(common.RegHosts);
+
+            List<SNMPHost> hosts = new List<SNMPHost>();
+
+            foreach (string value in RegHosts.GetValueNames())
+            {
+                string host = (string)RegHosts.GetValue(value);
+                hosts.Add(new SNMPHost { Host = host });
+            }
+            RegHosts.Close();
+
+            return hosts;
+        }
+
+        public static IEnumerable<SNMPTrap> GetSNMPTraps()
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+            RegistryKey RegTrap = Registry.LocalMachine.OpenSubKey(common.RegTraps);
+
+            List<SNMPTrap> traps = new List<SNMPTrap>();
+
+            foreach (string key in RegTrap.GetSubKeyNames())
+            {
+                string subkey = common.RegTraps + @"\" + key;
+                RegistryKey RegTrapDest = Registry.LocalMachine.OpenSubKey(subkey);
+                foreach (string value in RegTrapDest.GetValueNames())
+                {
+                    string destination = (string)RegTrapDest.GetValue(value);
+                    traps.Add(new SNMPTrap { Community = key, Destination = destination });
+                }
+                RegTrapDest.Close();
+            }
+            RegTrap.Close();
+
+            return traps;
         }
 
         public static IEnumerable<SNMPProperties> GetSNMPProperties()

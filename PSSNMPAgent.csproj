@@ -37,9 +37,6 @@
       <HintPath>packages\Microsoft.PowerShell.4.ReferenceAssemblies.1.0.0\lib\net4\System.Management.Automation.dll</HintPath>
     </Reference>
     <Reference Include="System.ServiceProcess" />
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -62,9 +59,21 @@
     <Compile Include="PSSNMPAgent\PSSNMPAgent.SetSNMPProperty.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="docs\Add-SNMPCommunity.md" />
+    <None Include="docs\Add-SNMPHost.md" />
+    <None Include="docs\Add-SNMPTrap.md" />
+    <None Include="docs\Get-SNMPCommunity.md" />
+    <None Include="docs\Get-SNMPHost.md" />
+    <None Include="docs\Get-SNMPProperties.md" />
+    <None Include="docs\Get-SNMPTrap.md" />
+    <None Include="docs\Remove-SNMPCommunity.md" />
+    <None Include="docs\Remove-SNMPHost.md" />
+    <None Include="docs\Remove-SNMPTrap.md" />
+    <None Include="docs\Set-SNMPProperties.md" />
     <None Include="packages.config" />
     <None Include="PSSNMPAgent\packages.config" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPProperty.cs" />
+    <None Include="PSSNMPAgent\PSSNMPAgent.psd1" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

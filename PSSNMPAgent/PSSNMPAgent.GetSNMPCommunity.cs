@@ -24,7 +24,7 @@ namespace GetSNMPCommunity.Cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
-            _SNMPCommunities = GetCommunities();
+            _SNMPCommunities = SNMPAgentCommon.GetCommunities();
 
             base.BeginProcessing();
         }
@@ -53,25 +53,6 @@ namespace GetSNMPCommunity.Cmd
             results.ToList().ForEach(WriteObject);           
 
             base.ProcessRecord();
-        }
-
-        private static IEnumerable<SNMPCommunity> GetCommunities()
-        {
-            SNMPAgentCommon common = new SNMPAgentCommon();
-            RegistryKey RegCommunities = Registry.LocalMachine.OpenSubKey(common.RegCommunities);
-
-            List<SNMPCommunity> communities = new List<SNMPCommunity>();
-            
-            foreach (string Community in RegCommunities.GetValueNames())
-            {
-                int accessValue = (int)RegCommunities.GetValue(Community);
-                var accessType = common.CommunityAccess.Single(a => a.dWordVal == accessValue);
-                string access = accessType.Access;
-                communities.Add(new SNMPCommunity { Community = Community, AccessRights = access });
-            }
-            RegCommunities.Close();
-
-            return communities;
-        }        
+        }      
     }
 }

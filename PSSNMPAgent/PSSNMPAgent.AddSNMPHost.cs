@@ -34,7 +34,7 @@ namespace AddSNMPHost.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
-            _SNMPHosts = GetSNMPHosts();            
+            _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();            
 
             base.BeginProcessing();
         }
@@ -58,7 +58,7 @@ namespace AddSNMPHost.cmd
             WriteVerbose("Adding " + Hosts.Count() + " hosts...");
             AddSNMPHosts(Hosts);
 
-            _SNMPHosts = GetSNMPHosts();
+            _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
 
             base.ProcessRecord();
         }
@@ -73,23 +73,6 @@ namespace AddSNMPHost.cmd
             results.ToList().ForEach(WriteObject);
 
             base.EndProcessing();
-        }
-
-        private static IEnumerable<SNMPHost> GetSNMPHosts()
-        {
-            SNMPAgentCommon common = new SNMPAgentCommon();
-            RegistryKey RegHosts = Registry.LocalMachine.OpenSubKey(common.RegHosts);
-
-            List<SNMPHost> hosts = new List<SNMPHost>();
-
-            foreach (string value in RegHosts.GetValueNames())
-            {
-                string host = (string)RegHosts.GetValue(value);
-                hosts.Add(new SNMPHost { Host = host });
-            }
-            RegHosts.Close();
-
-            return hosts;
         }
 
         private static void AddSNMPHosts(string[] Hosts)
