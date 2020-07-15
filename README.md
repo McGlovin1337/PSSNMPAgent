@@ -20,7 +20,8 @@ Set-SNMPProperty - Sets the SNMP Properties\
 ## Install
 The PSSNMPAgent Module is compatible with Powershell 4.0+
 
-TBC once added to PowerShell Gallery\
+```powershell
+Install-Module -Name PSSNMPAgent
 
 ## Usage
 Simply Import the Module to begin using:
