@@ -22,6 +22,7 @@ The PSSNMPAgent Module is compatible with Powershell 4.0+
 
 ```powershell
 Install-Module -Name PSSNMPAgent
+```
 
 ## Usage
 Simply Import the Module to begin using:
