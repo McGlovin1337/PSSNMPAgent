@@ -16,7 +16,7 @@ Remove-SNMPCommunity - Removes SNMP Community Names\
 Remove-SNMPHost - Removes SNMP permitted Hosts/Managers\
 Remove-SNMPTrap - Removes SNMP Trap Communities and/or Destinations\
 Reset-SNMPAgent - Resets the SNMP Agent back to installation default settings\
-Set-SNMPProperty - Sets the SNMP Properties\
+Set-SNMPProperty - Sets the SNMP Properties
 
 ## Install
 The PSSNMPAgent Module is compatible with Powershell 4.0+
