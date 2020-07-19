@@ -19,6 +19,7 @@ namespace GetSNMPProperty.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
+            WriteVerbose("Retriving current SNMP Properties...");
             _SNMPProperties = SNMPAgentCommon.GetSNMPProperties();
 
             base.BeginProcessing();

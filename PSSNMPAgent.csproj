@@ -56,6 +56,7 @@
     <Compile Include="PSSNMPAgent\PSSNMPAgent.RemoveSNMPCommunity.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.RemoveSNMPHost.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.RemoveSNMPTrap.cs" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.ResetSNMPAgent.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.SetSNMPProperty.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -69,11 +70,14 @@
     <None Include="docs\Remove-SNMPCommunity.md" />
     <None Include="docs\Remove-SNMPHost.md" />
     <None Include="docs\Remove-SNMPTrap.md" />
+    <None Include="docs\Reset-SNMPAgent.md" />
     <None Include="docs\Set-SNMPProperties.md" />
     <None Include="packages.config" />
     <None Include="PSSNMPAgent\packages.config" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPProperty.cs" />
-    <None Include="PSSNMPAgent\PSSNMPAgent.psd1" />
+    <None Include="PSSNMPAgent\PSSNMPAgent.psd1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

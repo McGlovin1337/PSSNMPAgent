@@ -34,6 +34,7 @@ namespace AddSNMPHost.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
+            WriteVerbose("Retrieving list of current SNMP Hosts...");
             _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();            
 
             base.BeginProcessing();
@@ -52,12 +53,21 @@ namespace AddSNMPHost.cmd
 
             if (results.Count() > 0)
             {
+                if (MyInvocation.BoundParameters.ContainsKey("Verbose"))
+                {
+                    WriteVerbose("The following SNMP Hosts already exist:");
+                    foreach (var result in results)
+                    {
+                        WriteVerbose(result.Host);
+                    }
+                }
                 throw new Exception("SNMP Host already exists");
             }
 
             WriteVerbose("Adding " + Hosts.Count() + " hosts...");
             AddSNMPHosts(Hosts);
 
+            WriteVerbose("Retrieving list of current SNMP Hosts...");
             _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
 
             base.ProcessRecord();

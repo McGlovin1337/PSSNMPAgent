@@ -33,6 +33,7 @@ namespace GetSNMPHost.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
+            WriteVerbose("Retrieving list of current SNMP Hosts...");
             _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
 
             base.BeginProcessing();

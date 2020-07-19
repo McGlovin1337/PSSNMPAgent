@@ -45,6 +45,7 @@ namespace SetSNMPProperty.cmd
 
         protected override void BeginProcessing()
         {
+            WriteVerbose("Retrieving current SNMP Properties...");
             _SNMPProperties = SNMPAgentCommon.GetSNMPProperties();
 
             base.BeginProcessing();

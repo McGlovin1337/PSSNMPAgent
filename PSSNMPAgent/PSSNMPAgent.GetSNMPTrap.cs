@@ -36,6 +36,7 @@ namespace GetSNMPTrap.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
+            WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
             _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
 
             base.BeginProcessing();

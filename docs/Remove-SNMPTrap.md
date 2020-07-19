@@ -13,7 +13,7 @@ Remove SNMP Trap Community Names and Destination Hosts
 ## SYNTAX
 
 ```
-Remove-SNMPTrap [-Community] <String[]> [[-Destination] <String[]>] [-DeleteCommunity] [<CommonParameters>]
+Remove-SNMPTrap [-Community] <String[]> [[-Destination] <String[]>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -23,10 +23,17 @@ Remove SNMP Trap Community Names and Destination Hosts
 
 ### Example 1
 ```powershell
-PS C:\> Remove-SNMPTrap -Community Monitoring -Destination traps.local 
+PS C:\> Remove-SNMPTrap -Community Monitoring -Destination traps.local
 ```
 
 Removes the host "traps.local" from the Community Name "Monitoring"
+
+### Example 2
+```powershell
+PS C:\> Remove-SNMPTrap -Community Monitoring
+```
+
+Removes the SNMP Trap Community named "Monitoring" including all assigned Destinations
 
 ## PARAMETERS
 
@@ -42,21 +49,6 @@ Required: True
 Position: 0
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
-Accept wildcard characters: False
-```
-
-### -DeleteCommunity
-Delete the specified Community Name including all Trap Destinations
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

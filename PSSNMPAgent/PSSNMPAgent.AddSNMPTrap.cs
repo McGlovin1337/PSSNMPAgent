@@ -50,6 +50,7 @@ namespace AddSNMPTrap.cmd
             }
 
             _newTraps = newTraps;
+            WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
             _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
 
             base.BeginProcessing();
@@ -63,7 +64,8 @@ namespace AddSNMPTrap.cmd
             newTraps.RemoveAll(x => results.Exists(y => y.Community == x.Community && y.Destination == x.Destination));
 
             if (newTraps.Count() > 0)
-            {                
+            {
+                WriteVerbose("Adding SNMP Traps...");
                 AddTraps(newTraps);
             }
             else

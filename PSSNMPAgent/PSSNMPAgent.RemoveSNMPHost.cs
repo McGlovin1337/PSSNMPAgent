@@ -35,6 +35,7 @@ namespace RemoveSNMPHost.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
+            WriteVerbose("Retrieving list of current SNMP Hosts...");
             _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
 
             base.BeginProcessing();
@@ -61,8 +62,10 @@ namespace RemoveSNMPHost.cmd
                 }
             }
 
+            WriteVerbose("Removing specified SNMP Permitted Hosts...");
             RemoveSNMPHosts(results);
 
+            WriteVerbose("Retrieving list of current SNMP Hosts...");
             _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
 
             base.ProcessRecord();
@@ -90,10 +93,13 @@ namespace RemoveSNMPHost.cmd
             }
             else
             {
-                WriteVerbose("Failed to remove the following hosts:");
-                foreach (var result in results)
+                if (MyInvocation.BoundParameters.ContainsKey("Verbose"))
                 {
-                    WriteVerbose(result.Host);
+                    WriteVerbose("Failed to remove the following hosts:");
+                    foreach (var result in results)
+                    {
+                        WriteVerbose(result.Host);
+                    }
                 }
                 throw new Exception("Some hosts failed to remove");
             }

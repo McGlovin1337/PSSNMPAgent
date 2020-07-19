@@ -25,6 +25,7 @@ namespace AddSNMPCommunity.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
+            WriteVerbose("Retrieving list of current SNMP Communities...");
             _SNMPCommunities = SNMPAgentCommon.GetCommunities();
 
             base.BeginProcessing();
@@ -41,10 +42,13 @@ namespace AddSNMPCommunity.cmd
 
             if (results.Count() > 0)
             {
-                WriteVerbose("The following SNMP Community names already exist:");
-                foreach (var result in results)
+                if (MyInvocation.BoundParameters.ContainsKey("Verbose"))
                 {
-                    WriteVerbose(result.Community);
+                    WriteVerbose("The following SNMP Community names already exist:");
+                    foreach (var result in results)
+                    {
+                        WriteVerbose(result.Community);
+                    }
                 }
                 throw new Exception("SNMP Community already exists");
             }
@@ -52,6 +56,7 @@ namespace AddSNMPCommunity.cmd
             WriteVerbose("Adding " + Communities.Count() + " Communities...");
             AddCommunities(Communities, AccessRight);
 
+            WriteVerbose("Retrieving list of current SNMP Communities...");
             _SNMPCommunities = SNMPAgentCommon.GetCommunities();
 
             base.ProcessRecord();

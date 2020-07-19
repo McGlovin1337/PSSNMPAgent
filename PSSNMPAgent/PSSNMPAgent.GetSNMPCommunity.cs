@@ -24,6 +24,7 @@ namespace GetSNMPCommunity.Cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
+            WriteVerbose("Retrieving list of current SNMP Communities...");
             _SNMPCommunities = SNMPAgentCommon.GetCommunities();
 
             base.BeginProcessing();

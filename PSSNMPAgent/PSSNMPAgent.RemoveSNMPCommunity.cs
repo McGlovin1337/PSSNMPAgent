@@ -21,6 +21,7 @@ namespace RemoveSNMPCommunity.cmd
             WriteVerbose("Checking SNMP Service is installed...");
             SNMPAgentCommon.ServiceCheck();
 
+            WriteVerbose("Retrieving list of current SNMP Communities...");
             _SNMPCommunities = SNMPAgentCommon.GetCommunities();
 
             base.BeginProcessing();
@@ -42,8 +43,10 @@ namespace RemoveSNMPCommunity.cmd
                 throw new Exception("None of the specified community names were found");                
             }
 
+            WriteVerbose("Removing specified SNMP Community Names...");
             RemoveSNMPCommunities(results);
 
+            WriteVerbose("Retrieving list of current SNMP Communities...");
             _SNMPCommunities = SNMPAgentCommon.GetCommunities();
 
             base.ProcessRecord();
@@ -66,10 +69,13 @@ namespace RemoveSNMPCommunity.cmd
             }
             else
             {
-                WriteVerbose("Failed to remove the following SNMP Community names:");
-                foreach (var result in results)
+                if (MyInvocation.BoundParameters.ContainsKey("Verbose"))
                 {
-                    WriteVerbose(result.Community);
+                    WriteVerbose("Failed to remove the following SNMP Community names:");
+                    foreach (var result in results)
+                    {
+                        WriteVerbose(result.Community);
+                    }
                 }
                 throw new Exception("Failed to remove all specified SNMP Community names");
             }

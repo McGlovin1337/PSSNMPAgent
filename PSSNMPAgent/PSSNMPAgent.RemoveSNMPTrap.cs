@@ -19,9 +19,6 @@ namespace RemoveSNMPTrap.cmd
         [Parameter(Position = 1, ValueFromPipelineByPropertyName = true, HelpMessage = "Specify SNMP Trap Destinations to remove from specified Comunity Names")]
         public string[] Destination { get; set; }
 
-        [Parameter(Position = 2, HelpMessage = "Delete the specified Community Name including all Trap Destinations")]
-        public SwitchParameter DeleteCommunity { get; set; }
-
         private static IEnumerable<SNMPTrap> _SNMPTrap;
         private static IEnumerable<SNMPTrap> _DelTrap;
 
@@ -44,7 +41,7 @@ namespace RemoveSNMPTrap.cmd
 
             List<SNMPTrap> delTraps = new List<SNMPTrap>();
 
-            if (!MyInvocation.BoundParameters.ContainsKey("DeleteCommunity"))
+            if (Community.Count() > 0 && Destination != null)
             { 
                 foreach (string communityName in Community)
                 {
@@ -56,6 +53,8 @@ namespace RemoveSNMPTrap.cmd
             }
 
             _DelTrap = delTraps;
+
+            WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
             _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
 
             base.BeginProcessing();
@@ -66,18 +65,19 @@ namespace RemoveSNMPTrap.cmd
             var results = _SNMPTrap;
             var delTraps = _DelTrap;
 
-            WriteVerbose("delTraps Count = " + delTraps.Count());
-
-            if (delTraps.Count() == 0 && MyInvocation.BoundParameters.ContainsKey("DeleteCommunity"))
+            if (Community.Count() > 0 && Destination == null)
             {
+                WriteVerbose("Removing SNMP Trap Community and all associated Destinations...");
                 DelCommunity(Community);
             }
             else
             {
                 var removeTraps = results.Intersect(delTraps, new SNMPTrapComparer());
+                WriteVerbose("Removing specified SNMP Trap Destinations for specified Community Names...");
                 DelTraps(removeTraps);
             }
 
+            WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
             _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
 
             base.ProcessRecord();
@@ -88,7 +88,7 @@ namespace RemoveSNMPTrap.cmd
             var results = _SNMPTrap;
             var delTraps = _DelTrap;
 
-            if (delTraps.Count() == 0 && MyInvocation.BoundParameters.ContainsKey("DeleteCommunity"))
+            if (delTraps.Count() == 0 && Community.Count() > 0 && Destination == null)
             {
                 results = results.Where(result => Community.Contains(result.Community));
             }
@@ -104,7 +104,7 @@ namespace RemoveSNMPTrap.cmd
             }
             else
             {
-                WriteObject("Successfully removed all SNMP Trap Communities/Destinations");
+                WriteObject("Successfully removed all specified SNMP Trap Communities/Destinations");
             }            
 
             base.EndProcessing();
@@ -115,8 +115,8 @@ namespace RemoveSNMPTrap.cmd
             SNMPAgentCommon common = new SNMPAgentCommon();
             foreach (string community in Community)
             {
-                string SubKey = common.RegTraps + @"\" + community;
-                Registry.LocalMachine.DeleteSubKey(SubKey);
+                RegistryKey SubKey = Registry.LocalMachine.CreateSubKey(common.RegTraps);
+                SubKey.DeleteSubKey(community);
             }
         }
 
