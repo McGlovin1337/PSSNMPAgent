@@ -10,13 +10,13 @@ Add-SNMPHost - Adds a new SNMP permitted Host/Manager\
 Add-SNMPTrap - Adds a new SNMP Trap Community and Destination, or adds a Destination to an existing Community Name\
 Get-SNMPCommunity - Retrieves the current SNMP Community Names\
 Get-SNMPHost - Retrieves the current permitted SNMP Host/Managers \
-Get-SNMPProperty - Retrieves the current SNMP Service Properties\
+Get-SNMPProperties - Retrieves the current SNMP Service Properties\
 Get-SNMPTrap - Retrieves the curren SNMP Trap Communities and their configured Destinations\
 Remove-SNMPCommunity - Removes SNMP Community Names\
 Remove-SNMPHost - Removes SNMP permitted Hosts/Managers\
 Remove-SNMPTrap - Removes SNMP Trap Communities and/or Destinations\
 Reset-SNMPAgent - Resets the SNMP Agent back to installation default settings\
-Set-SNMPProperty - Sets the SNMP Properties
+Set-SNMPProperties - Sets the SNMP Properties
 
 ## Install
 The PSSNMPAgent Module is compatible with Powershell 4.0+
