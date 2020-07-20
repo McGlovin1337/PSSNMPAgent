@@ -5,7 +5,7 @@ using PSSNMPAgent.Common;
 using System.Management.Automation;
 using Microsoft.Win32;
 
-namespace GetSNMPProperty.cmd
+namespace GetSNMPProperties.cmd
 {
     [Cmdlet(VerbsCommon.Get, nameof(SNMPProperties))]
     [OutputType(typeof(SNMPProperties))]

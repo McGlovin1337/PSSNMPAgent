@@ -10,12 +10,12 @@ namespace PSSNMPAgent.Common
     public class SNMPCommunity
     {
         public string Community { get; set; }
-        public string AccessRights { get; set; }
+        public string AccessRight { get; set; }
     }
 
     public class SNMPHost
     {
-        public string Host { get; set; }
+        public string PermittedHost { get; set; }
     }
 
     public class SNMPTrap
@@ -122,7 +122,7 @@ namespace PSSNMPAgent.Common
                 int accessValue = (int)RegCommunities.GetValue(Community);
                 var accessType = common.CommunityAccess.Single(a => a.dWordVal == accessValue);
                 string access = accessType.Access;
-                communities.Add(new SNMPCommunity { Community = Community, AccessRights = access });
+                communities.Add(new SNMPCommunity { Community = Community, AccessRight = access });
             }
             RegCommunities.Close();
 
@@ -139,7 +139,7 @@ namespace PSSNMPAgent.Common
             foreach (string value in RegHosts.GetValueNames())
             {
                 string host = (string)RegHosts.GetValue(value);
-                hosts.Add(new SNMPHost { Host = host });
+                hosts.Add(new SNMPHost { PermittedHost = host });
             }
             RegHosts.Close();
 
@@ -178,9 +178,9 @@ namespace PSSNMPAgent.Common
             List<SNMPProperties> properties = new List<SNMPProperties>();
 
             bool AuthTraps = Convert.ToBoolean((int)RegRoot.GetValue("EnableAuthenticationTraps"));
-            int NameRetries = (int)RegRoot.GetValue("NameResolutionRetries");
+            int NameRetries = (int)RegRoot.GetValue("NameResolutionRetries");            
             string Contact = (string)RegRFC.GetValue("sysContact");
-            string Location = (string)RegRFC.GetValue("sysLocation");
+            string Location = (string)RegRFC.GetValue("sysLocation");            
             int SvcValue = (int)RegRFC.GetValue("sysServices");
 
             RegRFC.Close();
@@ -214,7 +214,7 @@ namespace PSSNMPAgent.Common
                 SvcEndToEnd = SvcEnd,
                 SvcApplications = SvcApp
             });
-
+            
             return properties;
         }
     }

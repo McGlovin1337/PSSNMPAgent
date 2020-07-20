@@ -22,7 +22,7 @@ Resets the Windows SNMP Agent to Installation Default settings.
 ## EXAMPLES
 
 ### Example 1
-```powershell
+```
 PS C:\> Reset-SNMPAgent
 ```
 
@@ -36,7 +36,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### None
-
 ## OUTPUTS
 
 ### System.Object

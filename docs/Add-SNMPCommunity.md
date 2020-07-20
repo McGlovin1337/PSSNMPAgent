@@ -13,7 +13,7 @@ Add new SNMP Community Names
 ## SYNTAX
 
 ```
-Add-SNMPCommunity [-Communities] <String[]> [[-AccessRight] <String>] [<CommonParameters>]
+Add-SNMPCommunity -Community <String[]> [[-AccessRight] <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -22,8 +22,8 @@ Add new SNMP Community Names and set their Access Rights
 ## EXAMPLES
 
 ### Example 1
-```powershell
-PS C:\> Add-SNMPCommunity -Communities private -AccessRight ReadCreate
+```
+PS C:\> Add-SNMPCommunity -Community private -AccessRight ReadCreate
 
 Community     AccessRights
 ---------     ------------
@@ -50,8 +50,8 @@ Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
-### -Communities
-The SNMP Community Names to add
+### -Community
+Add new SNMP Community Name
 
 ```yaml
 Type: String[]
@@ -59,7 +59,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
-Position: 0
+Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
 Accept wildcard characters: False
@@ -71,9 +71,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### System.String[]
-
 ### System.String
-
 ## OUTPUTS
 
 ### PSSNMPAgent.Common.SNMPCommunity

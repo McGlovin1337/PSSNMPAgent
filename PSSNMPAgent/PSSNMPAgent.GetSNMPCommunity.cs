@@ -11,11 +11,11 @@ namespace GetSNMPCommunity.Cmd
     public class GetSNMPCommunity: PSCmdlet
     {
         [Parameter(Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, HelpMessage = "List matching SNMP Communities")]
-        public string[] Communities { get; set; }
+        public string[] Community { get; set; }
 
         [Parameter(Position = 1, ValueFromPipelineByPropertyName = true, HelpMessage = "List SNMP Communities by Access Right")]
         [ValidateSet("None", "Notify", "ReadOnly", "ReadWrite", "ReadCreate")]
-        public string[] AccessRights { get; set; }
+        public string[] AccessRight { get; set; }
 
         private static IEnumerable<SNMPCommunity> _SNMPCommunities;
 
@@ -36,14 +36,14 @@ namespace GetSNMPCommunity.Cmd
 
             if (results.Count() > 0)
             {
-                if (Communities != null)
+                if (Community != null)
                 {                    
-                    results = results.Where(community => Communities.Contains(community.Community));
+                    results = results.Where(community => Community.Contains(community.Community));
                 }
 
                 if (MyInvocation.BoundParameters.ContainsKey("AccessRights"))
                 {
-                    results = results.Where(access => AccessRights.Contains(access.AccessRights));
+                    results = results.Where(access => AccessRight.Contains(access.AccessRight));
                 }
             }
             else

@@ -5,7 +5,7 @@ using System.Management.Automation;
 using PSSNMPAgent.Common;
 using Microsoft.Win32;
 
-namespace SetSNMPProperty.cmd
+namespace SetSNMPProperties.cmd
 {
     [Cmdlet(VerbsCommon.Set, nameof(SNMPProperties))]
     [OutputType(typeof(SNMPProperties))]

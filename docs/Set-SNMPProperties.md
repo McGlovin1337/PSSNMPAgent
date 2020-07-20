@@ -24,14 +24,14 @@ Set the SNMP Agent Properties and select the Services that are Enabled and Disab
 ## EXAMPLES
 
 ### Example 1
-```powershell
+```
 PS C:\> Set-SNMPProperties -SysContact "Joe Bloggs" -SysLocation "London"
 ```
 
 Set the Contact Property to "Joe Bloggs" and the Location Property to "London"
 
 ### Example 2
-```powershell
+```
 PS C:\> Set-SNMPProperties -EnableAuthTraps:$false -SvcPhysical
 ```
 
@@ -49,7 +49,7 @@ Aliases:
 
 Required: False
 Position: 2
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -79,7 +79,7 @@ Aliases:
 
 Required: False
 Position: 5
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -94,7 +94,7 @@ Aliases:
 
 Required: False
 Position: 6
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -109,7 +109,7 @@ Aliases:
 
 Required: False
 Position: 8
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -124,7 +124,7 @@ Aliases:
 
 Required: False
 Position: 7
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -139,7 +139,7 @@ Aliases:
 
 Required: False
 Position: 4
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -180,9 +180,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### System.String
-
 ### System.Int32
-
 ## OUTPUTS
 
 ### PSSNMPAgent.Common.SNMPProperties

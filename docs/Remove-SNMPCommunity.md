@@ -13,7 +13,7 @@ Remove SNMP Community Names
 ## SYNTAX
 
 ```
-Remove-SNMPCommunity [-Communities] <String[]> [<CommonParameters>]
+Remove-SNMPCommunity -Community <String[]> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -22,15 +22,15 @@ Remove SNMP Community Names
 ## EXAMPLES
 
 ### Example 1
-```powershell
-PS C:\> Remove-SNMPCommunity -Communities Monitoring
+```
+PS C:\> Remove-SNMPCommunity -Community Monitoring
 ```
 
 Removes the SNMP Community Name "Monitoring"
 
 ## PARAMETERS
 
-### -Communities
+### -Community
 Remove the specified SNMP Community Names
 
 ```yaml
@@ -39,7 +39,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
-Position: 0
+Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
 Accept wildcard characters: False
@@ -51,7 +51,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### System.String[]
-
 ## OUTPUTS
 
 ### PSSNMPAgent.Common.SNMPCommunity

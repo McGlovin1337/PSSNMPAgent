@@ -12,7 +12,7 @@ namespace RemoveSNMPCommunity.cmd
     public class RemoveSNMPCommunity: PSCmdlet
     {
         [Parameter(Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Remove the specified SNMP Community Names")]
-        public string[] Communities { get; set; }
+        public string[] Community { get; set; }
 
         private static IEnumerable<SNMPCommunity> _SNMPCommunities;
 
@@ -36,7 +36,7 @@ namespace RemoveSNMPCommunity.cmd
                 throw new Exception("There are no SNMP Community Names to remove");
             }
 
-            results = results.Where(result => Communities.Contains(result.Community));
+            results = results.Where(result => Community.Contains(result.Community));
 
             if (results.Count() == 0)
             {
@@ -60,7 +60,7 @@ namespace RemoveSNMPCommunity.cmd
 
             if (results.Count() > 0)
             {
-                results = results.Where(result => Communities.Contains(result.Community));
+                results = results.Where(result => Community.Contains(result.Community));
             }
 
             if (results.Count() == 0)

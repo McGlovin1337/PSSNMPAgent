@@ -22,7 +22,7 @@ Get the configured SNMP Trap Community Names and Destination hosts.
 ## EXAMPLES
 
 ### Example 1
-```powershell
+```
 PS C:\> Get-SNMPTrap
 
 Community Destination
@@ -71,7 +71,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### System.String[]
-
 ## OUTPUTS
 
 ### PSSNMPAgent.Common.SNMPTrap

@@ -14,7 +14,7 @@ Remove SNMP Permitted Hosts
 
 ### Hosts
 ```
-Remove-SNMPHost [-Hosts] <String[]> [<CommonParameters>]
+Remove-SNMPHost -PermittedHost <String[]> [<CommonParameters>]
 ```
 
 ### RemoveAll
@@ -28,28 +28,13 @@ Remove SNMP Permitted Hosts/Managers
 ## EXAMPLES
 
 ### Example 1
-```powershell
-PS C:\> Remove-SNMPHost -Hosts monitoring.local
+```
+PS C:\> Remove-SNMPHost -PermittedHost monitoring.local
 ```
 
 Remove the host "monitoring.local" from the list of permitted hosts.
 
 ## PARAMETERS
-
-### -Hosts
-Remove SNMP Permitted Managers
-
-```yaml
-Type: String[]
-Parameter Sets: Hosts
-Aliases:
-
-Required: True
-Position: 0
-Default value: None
-Accept pipeline input: True (ByPropertyName, ByValue)
-Accept wildcard characters: False
-```
 
 ### -RemoveAllHosts
 Remove all SNMP Permitted Managers
@@ -61,8 +46,23 @@ Aliases:
 
 Required: True
 Position: 1
-Default value: None
+Default value: False
 Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -PermittedHost
+Remove SNMP Permitted Managers
+
+```yaml
+Type: String[]
+Parameter Sets: Hosts
+Aliases: Hosts, Host, Manager, PermittedManager
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: True (ByPropertyName, ByValue)
 Accept wildcard characters: False
 ```
 
@@ -72,9 +72,7 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### System.String[]
-
 ### System.Management.Automation.SwitchParameter
-
 ## OUTPUTS
 
 ### System.Object

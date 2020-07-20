@@ -57,7 +57,7 @@
     <Compile Include="PSSNMPAgent\PSSNMPAgent.RemoveSNMPHost.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.RemoveSNMPTrap.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.ResetSNMPAgent.cs" />
-    <Compile Include="PSSNMPAgent\PSSNMPAgent.SetSNMPProperty.cs" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.SetSNMPProperties.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="docs\Add-SNMPCommunity.md" />
@@ -74,7 +74,7 @@
     <None Include="docs\Set-SNMPProperties.md" />
     <None Include="packages.config" />
     <None Include="PSSNMPAgent\packages.config" />
-    <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPProperty.cs" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPProperties.cs" />
     <None Include="PSSNMPAgent\PSSNMPAgent.psd1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

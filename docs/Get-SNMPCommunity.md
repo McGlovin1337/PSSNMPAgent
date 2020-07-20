@@ -13,7 +13,7 @@ Get SNMP Agent Communities and Allowed Hosts
 ## SYNTAX
 
 ```
-Get-SNMPCommunity [-Communities <String[]>] [-AccessRights <String[]>] [<CommonParameters>]
+Get-SNMPCommunity [-Community <String[]>] [-AccessRight <String[]>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -22,7 +22,7 @@ Use Get-SNMPCommunity to return the configured SNMP Community Names and the conf
 ## EXAMPLES
 
 ### EXAMPLE 1
-```powershell
+```
 PS C:\>Get-SNMPCommunity
 
 Community     AccessRights
@@ -35,22 +35,7 @@ Get All SNMP Community Names and Access Rights
 
 ## PARAMETERS
 
-### -Communities
-List matching SNMP Communities
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: True (ByPropertyName, ByValue)
-Accept wildcard characters: False
-```
-
-### -AccessRights
+### -AccessRight
 List SNMP Communities by Access Right
 
 ```yaml
@@ -62,6 +47,21 @@ Required: False
 Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -Community
+List matching SNMP Communities
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByPropertyName, ByValue)
 Accept wildcard characters: False
 ```
 

@@ -9,10 +9,11 @@ using Microsoft.Win32;
 namespace RemoveSNMPHost.cmd
 {
     [Cmdlet(VerbsCommon.Remove, nameof(SNMPHost))]
-    public class RemoveSNMPHost: PSCmdlet
+    public class RemoveSNMPHost : PSCmdlet
     {
         [Parameter(Position = 0, ParameterSetName = "Hosts", ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Remove SNMP Permitted Managers")]
-        public string[] Hosts { get; set; }
+        [Alias("Hosts", "Host", "Manager", "PermittedManager")]
+        public string[] PermittedHost { get; set; }
 
         [Parameter(Position = 1, ParameterSetName = "RemoveAll", ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Remove all SNMP Permitted Managers")]
         public SwitchParameter RemoveAllHosts { get; set; }
@@ -21,9 +22,9 @@ namespace RemoveSNMPHost.cmd
 
         protected override void BeginProcessing()
         {
-            if (MyInvocation.BoundParameters.ContainsKey("Hosts"))
+            if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
             {
-                foreach (string Host in Hosts)
+                foreach (string Host in PermittedHost)
                 {
                     var Match = Regex.Match(Host, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
                     if (!Match.Success)
@@ -52,9 +53,9 @@ namespace RemoveSNMPHost.cmd
 
             if (!MyInvocation.BoundParameters.ContainsKey("RemoveAllHosts"))
             {
-                string[] LowerHost = Array.ConvertAll(Hosts, host => host.ToLower());
+                string[] LowerHost = Array.ConvertAll(PermittedHost, host => host.ToLower());
 
-                results = results.Where(result => LowerHost.Contains(result.Host.ToLower()));
+                results = results.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
 
                 if (results.Count() == 0)
                 {
@@ -77,13 +78,13 @@ namespace RemoveSNMPHost.cmd
 
             results.ToList().ForEach(WriteObject);
 
-            if (MyInvocation.BoundParameters.ContainsKey("Hosts"))
+            if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
             {
-                string[] LowerHost = Array.ConvertAll(Hosts, host => host.ToLower());
+                string[] LowerHost = Array.ConvertAll(PermittedHost, host => host.ToLower());
 
                 if (results.Count() > 0)
                 {
-                    results = results.Where(result => LowerHost.Contains(result.Host.ToLower()));
+                    results = results.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
                 }
             }
 
@@ -98,7 +99,7 @@ namespace RemoveSNMPHost.cmd
                     WriteVerbose("Failed to remove the following hosts:");
                     foreach (var result in results)
                     {
-                        WriteVerbose(result.Host);
+                        WriteVerbose(result.PermittedHost);
                     }
                 }
                 throw new Exception("Some hosts failed to remove");
@@ -112,7 +113,7 @@ namespace RemoveSNMPHost.cmd
             SNMPAgentCommon common = new SNMPAgentCommon();
             RegistryKey RegHosts = Registry.LocalMachine.OpenSubKey(common.RegHosts);
             List<string> valueNames = new List<string>();
-            string[] LowerHosts = Hosts.Select(host => host.Host).ToArray();
+            string[] LowerHosts = Hosts.Select(host => host.PermittedHost).ToArray();
             LowerHosts = Array.ConvertAll(LowerHosts, host => host.ToLower());
             string hostname;
 

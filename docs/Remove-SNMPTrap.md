@@ -22,14 +22,14 @@ Remove SNMP Trap Community Names and Destination Hosts
 ## EXAMPLES
 
 ### Example 1
-```powershell
+```
 PS C:\> Remove-SNMPTrap -Community Monitoring -Destination traps.local
 ```
 
 Removes the host "traps.local" from the Community Name "Monitoring"
 
 ### Example 2
-```powershell
+```
 PS C:\> Remove-SNMPTrap -Community Monitoring
 ```
 
@@ -73,11 +73,9 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### System.String[]
-
 ## OUTPUTS
 
 ### PSSNMPAgent.Common.SNMPTrap
-
 ## NOTES
 
 ## RELATED LINKS

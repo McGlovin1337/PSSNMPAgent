@@ -12,7 +12,7 @@ namespace AddSNMPCommunity.cmd
     public class PSSNMPAgent: PSCmdlet
     {
         [Parameter(Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Add new SNMP Community Name")]
-        public string[] Communities { get; set; }
+        public string[] Community { get; set; }
 
         [Parameter(Position = 1, ValueFromPipelineByPropertyName = true, HelpMessage = "Add new SNMP Community with the given Access Rights")]
         [ValidateSet("None", "Notify", "ReadOnly", "ReadWrite", "ReadCreate")]
@@ -37,7 +37,7 @@ namespace AddSNMPCommunity.cmd
 
             if (results.Count() > 0)
             {
-                results = results.Where(result => Communities.Contains(result.Community));
+                results = results.Where(result => Community.Contains(result.Community));
             }
 
             if (results.Count() > 0)
@@ -53,8 +53,8 @@ namespace AddSNMPCommunity.cmd
                 throw new Exception("SNMP Community already exists");
             }
 
-            WriteVerbose("Adding " + Communities.Count() + " Communities...");
-            AddCommunities(Communities, AccessRight);
+            WriteVerbose("Adding " + Community.Count() + " Communities...");
+            AddCommunities(Community, AccessRight);
 
             WriteVerbose("Retrieving list of current SNMP Communities...");
             _SNMPCommunities = SNMPAgentCommon.GetCommunities();
@@ -68,10 +68,10 @@ namespace AddSNMPCommunity.cmd
 
             if (results.Count() > 0)
             {
-                results = results.Where(result => Communities.Contains(result.Community));
+                results = results.Where(result => Community.Contains(result.Community));
             }
 
-            if (results.Count() == Communities.Count())
+            if (results.Count() == Community.Count())
             {
                 WriteVerbose("Successfully added all SNMP Community Names");
             }
@@ -79,12 +79,12 @@ namespace AddSNMPCommunity.cmd
             {
                 string[] communityArr = results.Select(result => result.Community).ToArray();
                 WriteVerbose("Failed to add the following SNMP Communities...");
-                foreach (string Community in Communities)
+                foreach (string communityName in Community)
                 {
-                    bool Match = communityArr.Contains(Community);
+                    bool Match = communityArr.Contains(communityName);
                     if (Match == false)
                     {
-                        WriteVerbose(Community);
+                        WriteVerbose(communityName);
                     }
                 }
             }

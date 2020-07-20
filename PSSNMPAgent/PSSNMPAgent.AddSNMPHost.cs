@@ -11,18 +11,19 @@ namespace AddSNMPHost.cmd
     [Cmdlet(VerbsCommon.Add, nameof(SNMPHost))]
     [OutputType(typeof(SNMPHost))]
 
-    public class AddSNMPHost: PSCmdlet
+    public class AddSNMPHost : PSCmdlet
     {
         [Parameter(Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Add a new SNMP Permitted Manager")]
-        public string[] Hosts { get; set; }
+        [Alias("Hosts", "Host", "Manager", "PermittedManager")]
+        public string[] PermittedHost { get; set; }
 
         private static IEnumerable<SNMPHost> _SNMPHosts;
 
         protected override void BeginProcessing()
         {
-            if (MyInvocation.BoundParameters.ContainsKey("Hosts"))
+            if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
             {
-                foreach (string Host in Hosts)
+                foreach (string Host in PermittedHost)
                 {
                     var Match = Regex.Match(Host, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
                     if (!Match.Success)
@@ -35,7 +36,7 @@ namespace AddSNMPHost.cmd
             SNMPAgentCommon.ServiceCheck();
 
             WriteVerbose("Retrieving list of current SNMP Hosts...");
-            _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();            
+            _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
 
             base.BeginProcessing();
         }
@@ -44,11 +45,11 @@ namespace AddSNMPHost.cmd
         {
             var results = _SNMPHosts;
 
-            string[] LowerHost = Array.ConvertAll(Hosts, host => host.ToLower());
+            string[] LowerHost = Array.ConvertAll(PermittedHost, host => host.ToLower());
 
             if (results.Count() > 0)
             {
-                results = results.Where(result => LowerHost.Contains(result.Host.ToLower()));
+                results = results.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
             }
 
             if (results.Count() > 0)
@@ -58,14 +59,14 @@ namespace AddSNMPHost.cmd
                     WriteVerbose("The following SNMP Hosts already exist:");
                     foreach (var result in results)
                     {
-                        WriteVerbose(result.Host);
+                        WriteVerbose(result.PermittedHost);
                     }
                 }
                 throw new Exception("SNMP Host already exists");
             }
 
-            WriteVerbose("Adding " + Hosts.Count() + " hosts...");
-            AddSNMPHosts(Hosts);
+            WriteVerbose("Adding " + PermittedHost.Count() + " hosts...");
+            AddSNMPHosts(PermittedHost);
 
             WriteVerbose("Retrieving list of current SNMP Hosts...");
             _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
@@ -76,9 +77,9 @@ namespace AddSNMPHost.cmd
         protected override void EndProcessing()
         {
             var results = _SNMPHosts;
-            string[] LowerHost = Array.ConvertAll(Hosts, host => host.ToLower());
+            string[] LowerHost = Array.ConvertAll(PermittedHost, host => host.ToLower());
 
-            results = results.Where(result => LowerHost.Contains(result.Host.ToLower()));
+            results = results.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
 
             results.ToList().ForEach(WriteObject);
 

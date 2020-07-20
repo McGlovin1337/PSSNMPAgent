@@ -13,7 +13,7 @@ Add new SNMP Permitted Hosts
 ## SYNTAX
 
 ```
-Add-SNMPHost [-Hosts] <String[]> [<CommonParameters>]
+Add-SNMPHost -PermittedHost <String[]> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -22,8 +22,8 @@ Add new Hosts permitted to acces the SNMP Service using the configured Community
 ## EXAMPLES
 
 ### Example 1
-```powershell
-PS C:\> Add-SNMPHost -Hosts 127.0.0.1, monitor.local
+```
+PS C:\> Add-SNMPHost -PermittedHost 127.0.0.1, monitor.local
 
 Host
 ----
@@ -35,16 +35,16 @@ Add 127.0.0.1 and monitor.local to the list of permitted hosts.
 
 ## PARAMETERS
 
-### -Hosts
+### -PermittedHost
 Add a new SNMP Permitted Manager
 
 ```yaml
 Type: String[]
 Parameter Sets: (All)
-Aliases:
+Aliases: Hosts, Host, Manager, PermittedManager
 
 Required: True
-Position: 0
+Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
 Accept wildcard characters: False
@@ -56,7 +56,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### System.String[]
-
 ## OUTPUTS
 
 ### PSSNMPAgent.Common.SNMPHost

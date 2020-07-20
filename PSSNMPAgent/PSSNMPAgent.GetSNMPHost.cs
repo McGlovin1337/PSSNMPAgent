@@ -10,18 +10,19 @@ namespace GetSNMPHost.cmd
 {
     [Cmdlet(VerbsCommon.Get, nameof(SNMPHost))]
     [OutputType(typeof(SNMPHost))]
-    public class GetSNMPHost: PSCmdlet
+    public class GetSNMPHost : PSCmdlet
     {
         [Parameter(Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, HelpMessage = "List matching Hosts")]
-        public string[] Hosts { get; set; }
+        [Alias("Hosts", "Host", "Manager", "PermittedManager")]
+        public string[] PermittedHost { get; set; }
 
         private static IEnumerable<SNMPHost> _SNMPHosts;
 
         protected override void BeginProcessing()
         {
-            if (MyInvocation.BoundParameters.ContainsKey("Hosts"))
+            if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
             {
-                foreach (string Host in Hosts)
+                foreach (string Host in PermittedHost)
                 {
                     var Match = Regex.Match(Host, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
                     if (!Match.Success)
@@ -45,9 +46,9 @@ namespace GetSNMPHost.cmd
 
             if (results.Count() > 0)
             {
-                if (MyInvocation.BoundParameters.ContainsKey("Hosts"))
+                if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
                 {
-                    results = results.Where(host => Regex.IsMatch(host.Host, string.Format("^(?i:{0})", string.Join("|", Hosts))));
+                    results = results.Where(host => Regex.IsMatch(host.PermittedHost, string.Format("^(?i:{0})", string.Join("|", PermittedHost))));
                 }
             }
             else

@@ -22,7 +22,7 @@ Add new SNMP Trap Community Names and Destination Hosts and add new Destination 
 ## EXAMPLES
 
 ### Example 1
-```powershell
+```
 PS C:\> Add-SNMPTrap -Community Monitoring -Destination monitor.local, traps.local
 
 Community  Destination
@@ -71,7 +71,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### System.String[]
-
 ## OUTPUTS
 
 ### PSSNMPAgent.Common.SNMPTrap

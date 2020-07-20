@@ -13,7 +13,7 @@ Get configured SNMP Hosts
 ## SYNTAX
 
 ```
-Get-SNMPHost [[-Hosts] <String[]>] [<CommonParameters>]
+Get-SNMPHost [-PermittedHost <String[]>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -22,7 +22,7 @@ Get the configured SNMP Permitted Hosts/Managers
 ## EXAMPLES
 
 ### Example 1
-```powershell
+```
 PS C:\> Get-SNMPHost
 
 Host
@@ -34,16 +34,16 @@ Returns all the configured SNMP Permiteed Hosts
 
 ## PARAMETERS
 
-### -Hosts
+### -PermittedHost
 List matching Hosts
 
 ```yaml
 Type: String[]
 Parameter Sets: (All)
-Aliases:
+Aliases: Hosts, Host, Manager, PermittedManager
 
 Required: False
-Position: 0
+Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
 Accept wildcard characters: False
@@ -55,7 +55,6 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## INPUTS
 
 ### System.String[]
-
 ## OUTPUTS
 
 ### PSSNMPAgent.Common.SNMPHost

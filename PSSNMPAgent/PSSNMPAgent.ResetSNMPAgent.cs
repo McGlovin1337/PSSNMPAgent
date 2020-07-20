@@ -55,11 +55,11 @@ namespace ResetSNMPAgent.cmd
 
             rfc1156Key.SetValue("sysContact", "");
             rfc1156Key.SetValue("sysLocation", "");
-            rfc1156Key.SetValue("sysServices", "76");
+            rfc1156Key.SetValue("sysServices", "76", RegistryValueKind.DWord);
             rfc1156Key.Close();
 
-            rootKey.SetValue("EnableAuthenticationTraps", "1");
-            rootKey.SetValue("NameResolutionRetries", "16");
+            rootKey.SetValue("EnableAuthenticationTraps", "1", RegistryValueKind.DWord);
+            rootKey.SetValue("NameResolutionRetries", "16", RegistryValueKind.DWord);
             rootKey.Close();
         }
     }
