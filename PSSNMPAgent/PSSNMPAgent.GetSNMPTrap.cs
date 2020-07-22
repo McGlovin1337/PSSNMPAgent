@@ -5,6 +5,7 @@ using System.Management.Automation;
 using PSSNMPAgent.Common;
 using Microsoft.Win32;
 using System.Text.RegularExpressions;
+using PSSNMPAgent.Remote;
 
 namespace GetSNMPTrap.cmd
 {
@@ -17,6 +18,14 @@ namespace GetSNMPTrap.cmd
 
         [Parameter(Position = 1, ValueFromPipelineByPropertyName = true, HelpMessage = "Specify Destination to match")]
         public string[] Destination { get; set; }
+
+        [Parameter(Position = 2, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
+        [ValidateNotNullOrEmpty]
+        public string Computer { get; set; }
+
+        [Parameter(Position = 3, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
+        [Credential, ValidateNotNullOrEmpty]
+        public PSCredential Credential { get; set; }
 
         private IEnumerable<SNMPTrap> _SNMPTrap;
 
@@ -33,11 +42,26 @@ namespace GetSNMPTrap.cmd
                     }
                 }
             }
-            WriteVerbose("Checking SNMP Service is installed...");
-            SNMPAgentCommon.ServiceCheck();
 
-            WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
-            _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                var Match = Regex.Match(Computer, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
+                if (!Match.Success)
+                {
+                    throw new ArgumentException("Specified Computer is not a valid hostname: " + Host);
+                }
+
+                WriteVerbose("Retrieving list of current SNMP Trap Community Names and Destinations from Computer: " + Computer);
+                _SNMPTrap = SNMPRemote.RemoteGetSNMPTrap(Computer, Credential);
+            }
+            else
+            {
+                WriteVerbose("Checking SNMP Service is installed...");
+                SNMPAgentCommon.ServiceCheck();
+
+                WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
+                _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+            }
 
             base.BeginProcessing();
         }
