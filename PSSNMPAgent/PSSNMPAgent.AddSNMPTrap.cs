@@ -5,6 +5,7 @@ using System.Management.Automation;
 using PSSNMPAgent.Common;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using PSSNMPAgent.Remote;
 
 namespace AddSNMPTrap.cmd
 {
@@ -18,6 +19,14 @@ namespace AddSNMPTrap.cmd
 
         [Parameter(Position = 1, ValueFromPipelineByPropertyName = true, HelpMessage = "Add Trap Destination hosts to all specified Community Names")]
         public string[] Destination { get; set; }
+
+        [Parameter(Position = 2, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
+        [ValidateNotNullOrEmpty]
+        public string Computer { get; set; }
+
+        [Parameter(Position = 3, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
+        [Credential, ValidateNotNullOrEmpty]
+        public PSCredential Credential { get; set; }
 
         private static IEnumerable<SNMPTrap> _SNMPTrap;
         private static IEnumerable<SNMPTrap> _newTraps;
@@ -36,9 +45,6 @@ namespace AddSNMPTrap.cmd
                 }
             }
 
-            WriteVerbose("Checking SNMP Service is installed...");
-            SNMPAgentCommon.ServiceCheck();
-
             List<SNMPTrap> newTraps = new List<SNMPTrap>();
 
             foreach (var communityName in Community)
@@ -50,8 +56,26 @@ namespace AddSNMPTrap.cmd
             }
 
             _newTraps = newTraps;
-            WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
-            _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                var Match = Regex.Match(Computer, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
+                if (!Match.Success)
+                {
+                    throw new ArgumentException("Specified Computer is not a valid hostname: " + Host);
+                }
+
+                WriteVerbose("Retrieving current SNMP Trap Communities and Destinations from Computer: " + Computer);
+                _SNMPTrap = SNMPRemote.RemoteGetSNMPTrap(Computer, Credential);
+            }
+            else
+            {
+                WriteVerbose("Checking SNMP Service is installed...");
+                SNMPAgentCommon.ServiceCheck();
+
+                WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
+                _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+            }
 
             base.BeginProcessing();
         }
@@ -66,15 +90,23 @@ namespace AddSNMPTrap.cmd
             if (newTraps.Count() > 0)
             {
                 WriteVerbose("Adding SNMP Traps...");
-                AddTraps(newTraps);
+                if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+                {
+                    SNMPRemote.RemoteAddSNMPTrap(newTraps, Computer, Credential);
+                    _SNMPTrap = SNMPRemote.RemoteGetSNMPTrap(Computer, Credential);
+                }
+                else
+                {
+                    AddTraps(newTraps);
+                    _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+                }
             }
             else
             {
                 throw new Exception("Community Name and Destinations already Exist");
             }
 
-            _newTraps = newTraps;
-            _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+            _newTraps = newTraps;            
 
             base.ProcessRecord();
         }

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Management.Automation;
 using PSSNMPAgent.Common;
 using Microsoft.Win32;
+using PSSNMPAgent.Remote;
+using System.Text.RegularExpressions;
 
 namespace AddSNMPCommunity.cmd
 {
@@ -18,15 +20,36 @@ namespace AddSNMPCommunity.cmd
         [ValidateSet("None", "Notify", "ReadOnly", "ReadWrite", "ReadCreate")]
         public string AccessRight { get; set; }
 
+        [Parameter(Position = 2, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
+        [ValidateNotNullOrEmpty]
+        public string Computer { get; set; }
+
+        [Parameter(Position = 3, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
+        [Credential, ValidateNotNullOrEmpty]
+        public PSCredential Credential { get; set; }
+
         private static IEnumerable<SNMPCommunity> _SNMPCommunities;
 
         protected override void BeginProcessing()
         {
-            WriteVerbose("Checking SNMP Service is installed...");
-            SNMPAgentCommon.ServiceCheck();
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                var Match = Regex.Match(Computer, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
+                if (!Match.Success)
+                {
+                    throw new ArgumentException("Specified Computer is not a valid hostname: " + Host);
+                }
+                WriteVerbose("Retrieving list of current SNMP Communities from Computer: " + Computer);
+                _SNMPCommunities = SNMPRemote.RemoteGetSNMPCommunity(Computer, Credential);
+            }
+            else
+            {
+                WriteVerbose("Checking SNMP Service is installed...");
+                SNMPAgentCommon.ServiceCheck();
 
-            WriteVerbose("Retrieving list of current SNMP Communities...");
-            _SNMPCommunities = SNMPAgentCommon.GetCommunities();
+                WriteVerbose("Retrieving list of current SNMP Communities...");
+                _SNMPCommunities = SNMPAgentCommon.GetCommunities();
+            }
 
             base.BeginProcessing();
         }
@@ -54,10 +77,20 @@ namespace AddSNMPCommunity.cmd
             }
 
             WriteVerbose("Adding " + Community.Count() + " Communities...");
-            AddCommunities(Community, AccessRight);
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                SNMPRemote.RemoteAddSNMPCommunity(Community, AccessRight, Computer, Credential);
 
-            WriteVerbose("Retrieving list of current SNMP Communities...");
-            _SNMPCommunities = SNMPAgentCommon.GetCommunities();
+                WriteVerbose("Retrieving list of current SNMP Communities from Computer: " + Computer);
+                _SNMPCommunities = SNMPRemote.RemoteGetSNMPCommunity(Computer, Credential);
+            }
+            else
+            {                
+                AddCommunities(Community, AccessRight);
+
+                WriteVerbose("Retrieving list of current SNMP Communities...");
+                _SNMPCommunities = SNMPAgentCommon.GetCommunities();
+            }
 
             base.ProcessRecord();
         }

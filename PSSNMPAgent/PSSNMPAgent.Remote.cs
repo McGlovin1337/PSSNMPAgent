@@ -111,18 +111,21 @@ namespace PSSNMPAgent.Remote
                 mboIn2.Dispose();
                 mboOut2.Dispose();
 
-                foreach (var value in Values)
+                if (Values != null)
                 {
-                    ManagementBaseObject mboIn3 = mc.GetMethodParameters("GetStringValue");
-                    mboIn3["hDefKey"] = (UInt32)2147483650;
-                    mboIn3["sSubKeyName"] = subKey;
-                    mboIn3["sValueName"] = value;
+                    foreach (var value in Values)
+                    {
+                        ManagementBaseObject mboIn3 = mc.GetMethodParameters("GetStringValue");
+                        mboIn3["hDefKey"] = (UInt32)2147483650;
+                        mboIn3["sSubKeyName"] = subKey;
+                        mboIn3["sValueName"] = value;
 
-                    ManagementBaseObject mboOut3 = mc.InvokeMethod("GetStringValue", mboIn3, null);
-                    traps.Add(new SNMPTrap { Community = subKeyName, Destination = (string)mboOut3["sValue"] });
+                        ManagementBaseObject mboOut3 = mc.InvokeMethod("GetStringValue", mboIn3, null);
+                        traps.Add(new SNMPTrap { Community = subKeyName, Destination = (string)mboOut3["sValue"] });
 
-                    mboIn3.Dispose();
-                    mboOut3.Dispose();
+                        mboIn3.Dispose();
+                        mboOut3.Dispose();
+                    }
                 }
             }
 
@@ -214,6 +217,147 @@ namespace PSSNMPAgent.Remote
             });
 
             return properties;
+        }
+
+        public static void RemoteAddSNMPCommunity(string[] Communities, string Access, string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+            int AccessValue = common.CommunityAccess.Single(val => val.Access == Access).dWordVal;
+
+            ManagementClass mc = RemoteConnect(Computer, Credential);
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("SetDWORDValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegCommunities;
+
+            foreach (string Community in Communities)
+            {
+                mboIn["sValueName"] = Community;
+                mboIn["uValue"] = AccessValue;
+
+                mc.InvokeMethod("SetDWORDValue", mboIn, null);
+            }
+
+            mboIn.Dispose();
+        }
+
+        public static void RemoteAddSNMPHosts(string[] Hosts, string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+            List<int> valueNames = new List<int>();
+
+            ManagementClass mc = RemoteConnect(Computer, Credential);
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("EnumValues");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegHosts;
+
+            ManagementBaseObject mboOut = mc.InvokeMethod("EnumValues", mboIn, null);
+            string[] strValueNames = (string[])mboOut["sNames"];
+
+            mboIn.Dispose();
+            mboOut.Dispose();
+
+            foreach (string ValueName in strValueNames)
+            {
+                if (ValueName != "(Default)")
+                {
+                    valueNames.Add(Convert.ToInt32(ValueName));
+                }
+            }
+
+            ManagementBaseObject mboIn2 = mc.GetMethodParameters("SetStringValue");
+            mboIn2["hDefKey"] = (UInt32)2147483650;
+            mboIn2["sSubKeyName"] = common.RegHosts;
+
+            int val = 1;
+            String Value;
+            bool valExist = true;
+
+            foreach (var Host in Hosts)
+            {
+                while (valExist == true)
+                {
+                    valExist = valueNames.Contains(val);
+                    if (valExist == true) { val++; }
+                }
+                Value = Convert.ToString(val);
+                mboIn2["sValueName"] = Value;
+                mboIn2["sValue"] = Host;
+                mc.InvokeMethod("SetStringValue", mboIn2, null);
+                valExist = true;
+                val = 1;
+            }
+
+            mboIn2.Dispose();
+        }
+
+        public static void RemoteAddSNMPTrap(IEnumerable<SNMPTrap> newTraps, string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+
+            ManagementClass mc = RemoteConnect(Computer, Credential);
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("EnumKey");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegTraps;
+
+            ManagementBaseObject mboOut = mc.InvokeMethod("EnumKey", mboIn, null);
+            string[] trapKeys = (string[])mboOut["sNames"];
+            IEnumerable<string> TrapKeys = trapKeys.ToList();
+
+            mboIn.Dispose();
+            mboOut.Dispose();
+
+            IEnumerable<string> Communities = newTraps.Select(x => x.Community).Distinct();
+            IEnumerable<string> Destinations = newTraps.Select(y => y.Destination).Distinct();
+            TrapKeys = TrapKeys.Where(key => Communities.Contains(key));
+
+            ManagementBaseObject mboIn2 = mc.GetMethodParameters("EnumValues");
+            mboIn2["hDefKey"] = (UInt32)2147483650;
+
+            ManagementBaseObject mboIn3 = mc.GetMethodParameters("CreateKey");
+            mboIn3["hDefKey"] = (UInt32)2147483650;
+
+            ManagementBaseObject mboIn4 = mc.GetMethodParameters("SetStringValue");
+            mboIn4["hDefKey"] = (UInt32)2147483650;
+
+            foreach (string Community in Communities)
+            {
+                mboIn2["sSubKeyName"] = common.RegTraps + @"\" + Community;
+                mboIn3["sSubKeyName"] = common.RegTraps + @"\" + Community;
+                mboIn4["sSubKeyName"] = common.RegTraps + @"\" + Community;
+                int valueStart = 1;
+                bool KeyExist = TrapKeys.Contains(Community);
+                if (KeyExist == true)
+                {
+                    ManagementBaseObject mboOut2 = mc.InvokeMethod("EnumValues", mboIn2, null);
+                    string[] sNames = (string[])mboOut2["sNames"];
+                    List<string> values = sNames.ToList();
+                    values.RemoveAll(x => x == "(Default)");
+                    IEnumerable<int> Values = values.Select(x => int.Parse(x)).ToList();
+                    valueStart = Values.Max();
+                    valueStart++;
+                    mboOut2.Dispose();
+                }
+                else
+                {
+                    mc.InvokeMethod("CreateKey", mboIn3, null);
+                }    
+
+                foreach (string Destination in Destinations)
+                {
+                    mboIn4["sValueName"] = valueStart.ToString();
+                    mboIn4["sValue"] = Destination;
+
+                    mc.InvokeMethod("SetStringValue", mboIn4, null);
+                    valueStart++;
+                }
+            }
+
+            mboIn2.Dispose();
+            mboIn3.Dispose();
+            mboIn4.Dispose();
         }
 
         private static ManagementClass RemoteConnect(string Computer, PSCredential Credential)

@@ -5,6 +5,7 @@ using System.Management.Automation;
 using PSSNMPAgent.Common;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using PSSNMPAgent.Remote;
 
 namespace AddSNMPHost.cmd
 {
@@ -16,6 +17,14 @@ namespace AddSNMPHost.cmd
         [Parameter(Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Add a new SNMP Permitted Manager")]
         [Alias("Hosts", "Host", "Manager", "PermittedManager")]
         public string[] PermittedHost { get; set; }
+
+        [Parameter(Position = 1, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
+        [ValidateNotNullOrEmpty]
+        public string Computer { get; set; }
+
+        [Parameter(Position = 2, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
+        [Credential, ValidateNotNullOrEmpty]
+        public PSCredential Credential { get; set; }
 
         private static IEnumerable<SNMPHost> _SNMPHosts;
 
@@ -32,11 +41,25 @@ namespace AddSNMPHost.cmd
                     }
                 }
             }
-            WriteVerbose("Checking SNMP Service is installed...");
-            SNMPAgentCommon.ServiceCheck();
 
-            WriteVerbose("Retrieving list of current SNMP Hosts...");
-            _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                var Match = Regex.Match(Computer, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
+                if (!Match.Success)
+                {
+                    throw new ArgumentException("Specified Computer is not a valid hostname: " + Host);
+                }
+                WriteVerbose("Retrieving list of current SNMP Hosts from Computer: " + Computer);
+                _SNMPHosts = SNMPRemote.RemoteGetSNMPHosts(Computer, Credential);
+            }
+            else
+            {
+                WriteVerbose("Checking SNMP Service is installed...");
+                SNMPAgentCommon.ServiceCheck();
+
+                WriteVerbose("Retrieving list of current SNMP Hosts...");
+                _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
+            }
 
             base.BeginProcessing();
         }
@@ -66,10 +89,20 @@ namespace AddSNMPHost.cmd
             }
 
             WriteVerbose("Adding " + PermittedHost.Count() + " hosts...");
-            AddSNMPHosts(PermittedHost);
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                SNMPRemote.RemoteAddSNMPHosts(PermittedHost, Computer, Credential);
 
-            WriteVerbose("Retrieving list of current SNMP Hosts...");
-            _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
+                WriteVerbose("Retrieving list of current SNMP Hosts from Computer: " + Computer);
+                _SNMPHosts = SNMPRemote.RemoteGetSNMPHosts(Computer, Credential);
+            }
+            else
+            {
+                AddSNMPHosts(PermittedHost);
+
+                WriteVerbose("Retrieving list of current SNMP Hosts...");
+                _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
+            }
 
             base.ProcessRecord();
         }
