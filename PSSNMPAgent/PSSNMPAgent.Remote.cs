@@ -507,6 +507,113 @@ namespace PSSNMPAgent.Remote
             mboIn3.Dispose();
         }
 
+        public static void RemoteResetSNMPAgent(string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+
+            ManagementClass mc = SNMPRemote.RemoteConnect(Computer, Credential);
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("EnumValues");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegCommunities;
+
+            ManagementBaseObject mboOut = mc.InvokeMethod("EnumValues", mboIn, null);
+            string[] valueNames = (string[])mboOut["sNames"];
+            mboIn.Dispose();
+            mboOut.Dispose();
+
+            mboIn = mc.GetMethodParameters("DeleteValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegCommunities;
+
+            foreach (string value in valueNames)
+            {
+                mboIn["sValueName"] = value;
+                if (value != "(Default)") mc.InvokeMethod("DeleteValue", mboIn, null);
+            }
+            mboIn.Dispose();
+            Array.Clear(valueNames, 0, valueNames.Length);
+
+            mboIn = mc.GetMethodParameters("EnumValues");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegHosts;
+
+            mboOut = mc.InvokeMethod("EnumValues", mboIn, null);            
+            valueNames = (string[])mboOut["sNames"];
+            mboIn.Dispose();
+            mboOut.Dispose();
+
+            mboIn = mc.GetMethodParameters("DeleteValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegCommunities;
+
+            foreach (string value in valueNames)
+            {
+                mboIn["sValueName"] = value;
+                if (value != "(Default)") mc.InvokeMethod("DeleteValue", mboIn, null);
+            }
+            mboIn.Dispose();
+            Array.Clear(valueNames, 0, valueNames.Length);
+
+            mboIn = mc.GetMethodParameters("SetStringValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegHosts;
+            mboIn["sValueName"] = "1";
+            mboIn["sValue"] = "localhost";
+
+            mc.InvokeMethod("SetStringValue", mboIn, null);
+            mboIn.Dispose();
+
+            mboIn = mc.GetMethodParameters("EnumKey");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegTraps;
+
+            mboOut = mc.InvokeMethod("EnumKey", mboIn, null);
+            valueNames = (string[])mboOut["sNames"];
+            mboIn.Dispose();
+            mboOut.Dispose();
+
+            mboIn = mc.GetMethodParameters("DeleteKey");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+
+            foreach (string valueName in valueNames)
+            {
+                mboIn["sSubKeyName"] = common.RegTraps + @"\" + valueName;
+                mc.InvokeMethod("DeleteKey", mboIn, null);
+            }
+            mboIn.Dispose();
+
+            mboIn = mc.GetMethodParameters("SetStringValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegRFC1156;
+            mboIn["sValueName"] = "sysContact";
+            mboIn["sValue"] = "";
+            mc.InvokeMethod("SetStringValue", mboIn, null);
+
+            mboIn["sValueName"] = "sysLocation";
+            mboIn["sValue"] = "";
+            mc.InvokeMethod("SetStringValue", mboIn, null);
+            mboIn.Dispose();
+
+            mboIn = mc.GetMethodParameters("SetDWORDValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegRFC1156;
+            mboIn["sValueName"] = "sysServices";
+            mboIn["uValue"] = 76;
+            mc.InvokeMethod("SetDWORDValue", mboIn, null);
+
+            mboIn["sSubKeyName"] = common.RegRootSubKey;
+            mboIn["sValueName"] = "EnableAuthenticationTraps";
+            mboIn["uValue"] = 1;
+            mc.InvokeMethod("SetDWORDValue", mboIn, null);
+
+            mboIn["sValueName"] = "NameResolutionRetries";
+            mboIn["uValue"] = 16;
+            mc.InvokeMethod("SetDWORDValue", mboIn, null);
+
+            mboIn.Dispose();
+        }
+
         private static ManagementClass RemoteConnect(string Computer, PSCredential Credential)
         {
             ConnectionOptions conOpt = new ConnectionOptions();

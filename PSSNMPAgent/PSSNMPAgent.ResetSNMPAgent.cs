@@ -2,6 +2,8 @@
 using System.Management.Automation;
 using PSSNMPAgent.Common;
 using Microsoft.Win32;
+using PSSNMPAgent.Remote;
+using System.Text.RegularExpressions;
 
 namespace ResetSNMPAgent.cmd
 {
@@ -9,18 +11,45 @@ namespace ResetSNMPAgent.cmd
 
     public class PSSNMPAgent: PSCmdlet
     {
+        [Parameter(Position = 0, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
+        [ValidateNotNullOrEmpty]
+        public string Computer { get; set; }
+
+        [Parameter(Position = 1, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
+        [Credential, ValidateNotNullOrEmpty]
+        public PSCredential Credential { get; set; }
+
         protected override void BeginProcessing()
         {
-            WriteVerbose("Checking SNMP Service is installed...");
-            SNMPAgentCommon.ServiceCheck();
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                var Match = Regex.Match(Computer, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
+                if (!Match.Success)
+                {
+                    throw new ArgumentException("Specified Computer is not a valid hostname: " + Host);
+                }
+            }
+            else
+            {
+                WriteVerbose("Checking SNMP Service is installed...");
+                SNMPAgentCommon.ServiceCheck();
+            }
 
             base.BeginProcessing();
         }
 
         protected override void ProcessRecord()
         {
-            WriteVerbose("Resetting SNMP Agent Configuration to installation defaults...");
-            ResetSNMPAgent();
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                WriteVerbose("Resetting SNMP Agent Configuration to installation defaults on Computer: " + Computer);
+                SNMPRemote.RemoteResetSNMPAgent(Computer, Credential);
+            }
+            else
+            {
+                WriteVerbose("Resetting SNMP Agent Configuration to installation defaults...");
+                ResetSNMPAgent();
+            }
 
             base.ProcessRecord();
         }
