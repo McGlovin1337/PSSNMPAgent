@@ -360,6 +360,153 @@ namespace PSSNMPAgent.Remote
             mboIn4.Dispose();
         }
 
+        public static void RemoteRemoveSNMPCommunities(IEnumerable<SNMPCommunity> Communities, string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+
+            ManagementClass mc = RemoteConnect(Computer, Credential);
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("DeleteValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegCommunities;
+
+            foreach (var value in Communities)
+            {
+                if (value.Community != "(Default)")
+                {
+                    mboIn["sValueName"] = value.Community;
+
+                    mc.InvokeMethod("DeleteValue", mboIn, null);
+                }
+            }
+            mboIn.Dispose();
+        }
+
+        public static void RemoteRemoveSNMPHosts(IEnumerable<SNMPHost> Hosts, string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+
+            ManagementClass mc = RemoteConnect(Computer, Credential);
+
+            List<string> valueNames = new List<string>();
+            string[] LowerHosts = Hosts.Select(host => host.PermittedHost).ToArray();
+            LowerHosts = Array.ConvertAll(LowerHosts, host => host.ToLower());
+            string hostname;
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("EnumValues");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegHosts;
+
+            ManagementBaseObject mboOut = mc.InvokeMethod("EnumValues", mboIn, null);
+            string[] ValueNames = (string[])mboOut["sNames"];
+
+            mboIn.Dispose();
+            mboOut.Dispose();
+
+            ManagementBaseObject mboIn2 = mc.GetMethodParameters("GetStringValue");
+            mboIn2["hDefKey"] = (UInt32)2147483650;
+            mboIn2["sSubKeyName"] = common.RegHosts;
+
+            foreach (string valueName in ValueNames)
+            {
+                if (valueName != "(Default)")
+                {
+                    mboIn2["sValueName"] = valueName;
+
+                    ManagementBaseObject mboOut2 = mc.InvokeMethod("GetStringValue", mboIn2, null);
+                    hostname = (string)mboOut2["sValue"];
+                    mboOut2.Dispose();
+
+                    if (LowerHosts.Contains(hostname.ToLower()))
+                    {
+                        valueNames.Add(valueName);
+                    }
+                }
+            }
+            mboIn2.Dispose();
+
+            ManagementBaseObject mboIn3 = mc.GetMethodParameters("DeleteValue");
+            mboIn3["hDefKey"] = (UInt32)2147483650;
+            mboIn3["sSubKeyName"] = common.RegHosts;
+
+            foreach (string value in valueNames)
+            {
+                mboIn3["sValueName"] = value;
+
+                mc.InvokeMethod("DeleteValue", mboIn3, null);                
+            }
+            mboIn3.Dispose();
+        }
+
+        public static void RemoteDelCommunity(string[] Community, string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+
+            ManagementClass mc = RemoteConnect(Computer, Credential);
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("DeleteKey");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            
+            foreach (string community in Community)
+            {
+                mboIn["sSubKeyName"] = common.RegTraps + @"\" + community;
+
+                mc.InvokeMethod("DeleteKey", mboIn, null);
+            }
+            mboIn.Dispose();
+        }
+
+        public static void RemoteDelTraps(IEnumerable<SNMPTrap> delTraps, string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+
+            ManagementClass mc = RemoteConnect(Computer, Credential);
+
+            string[] subKeys = delTraps.Select(x => x.Community).Distinct().ToArray();
+            List<RegTrapValueMap> values = new List<RegTrapValueMap>();
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("EnumValues");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+
+            foreach (var key in subKeys)
+            {
+                mboIn["sSubKeyName"] = common.RegTraps + @"\" + key;
+
+                ManagementBaseObject mboOut = mc.InvokeMethod("EnumValues", mboIn, null);
+                string[] valueNames = (string[])mboOut["sNames"];
+                mboOut.Dispose();
+
+                ManagementBaseObject mboIn2 = mc.GetMethodParameters("GetStringValue");
+                mboIn2["hDefKey"] = (UInt32)2147483650;
+                mboIn2["sSubKeyName"] = common.RegTraps + @"\" + key;
+
+                foreach (string valueName in valueNames)
+                {
+                    mboIn2["sValueName"] = valueName;
+
+                    ManagementBaseObject mboOut2 = mc.InvokeMethod("GetStringValue", mboIn2, null);
+                    string value = (string)mboOut2["sValue"];
+                    mboOut2.Dispose();
+
+                    values.Add(new RegTrapValueMap { SubKey = key, ValueName = valueName, Value = value });
+                }
+                mboIn2.Dispose();
+            }
+            mboIn.Dispose();
+
+            ManagementBaseObject mboIn3 = mc.GetMethodParameters("DeleteValue");
+            mboIn3["hDefKey"] = (UInt32)2147483650;
+            foreach (var trap in delTraps)
+            {
+                mboIn3["sSubKeyName"] = common.RegTraps + @"\" + trap.Community;
+                var delTarget = values.Single(value => value.SubKey == trap.Community && value.Value == trap.Destination);
+                mboIn3["sValueName"] = delTarget.ValueName;
+
+                mc.InvokeMethod("DeleteValue", mboIn3, null);
+            }
+            mboIn3.Dispose();
+        }
+
         private static ManagementClass RemoteConnect(string Computer, PSCredential Credential)
         {
             ConnectionOptions conOpt = new ConnectionOptions();

@@ -38,6 +38,13 @@ namespace PSSNMPAgent.Common
 
     }
 
+    public class RegTrapValueMap
+    {
+        public string SubKey { get; set; }
+        public string ValueName { get; set; }
+        public string Value { get; set; }
+    }
+
     public class SNMPAgentCommon
     {
         private const string regRootSubKey = @"SYSTEM\CurrentControlSet\Services\SNMP\Parameters";
