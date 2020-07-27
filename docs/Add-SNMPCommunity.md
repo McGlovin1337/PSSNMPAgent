@@ -13,7 +13,8 @@ Add new SNMP Community Names
 ## SYNTAX
 
 ```
-Add-SNMPCommunity -Community <String[]> [[-AccessRight] <String>] [<CommonParameters>]
+Add-SNMPCommunity -Community <String[]> [[-AccessRight] <String>] [-Computer <String>]
+ [-Credential <PSCredential>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -62,6 +63,36 @@ Required: True
 Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
+Accept wildcard characters: False
+```
+
+### -Computer
+Connect to Computer
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -Credential
+Remote Computer Credentials
+
+```yaml
+Type: PSCredential
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 

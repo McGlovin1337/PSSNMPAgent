@@ -12,14 +12,15 @@ Remove SNMP Permitted Hosts
 
 ## SYNTAX
 
-### Hosts
-```
-Remove-SNMPHost -PermittedHost <String[]> [<CommonParameters>]
-```
-
 ### RemoveAll
 ```
-Remove-SNMPHost [-RemoveAllHosts] [<CommonParameters>]
+Remove-SNMPHost -PermittedHost <String[]> [-RemoveAllHosts] [<CommonParameters>]
+```
+
+### Remote
+```
+Remove-SNMPHost -PermittedHost <String[]> [-Computer <String>] [-Credential <PSCredential>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -56,13 +57,43 @@ Remove SNMP Permitted Managers
 
 ```yaml
 Type: String[]
-Parameter Sets: Hosts
+Parameter Sets: (All)
 Aliases: Hosts, Host, Manager, PermittedManager
 
 Required: True
 Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)
+Accept wildcard characters: False
+```
+
+### -Computer
+Connect to Computer
+
+```yaml
+Type: String
+Parameter Sets: Remote
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByPropertyName)
+Accept wildcard characters: False
+```
+
+### -Credential
+Remote Computer Credentials
+
+```yaml
+Type: PSCredential
+Parameter Sets: Remote
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 
