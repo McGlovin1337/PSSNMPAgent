@@ -5,6 +5,7 @@ using System.Management.Automation;
 using PSSNMPAgent.Common;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using PSSNMPAgent.Remote;
 
 namespace RemoveSNMPTrap.cmd
 {
@@ -18,6 +19,14 @@ namespace RemoveSNMPTrap.cmd
 
         [Parameter(Position = 1, ValueFromPipelineByPropertyName = true, HelpMessage = "Specify SNMP Trap Destinations to remove from specified Comunity Names")]
         public string[] Destination { get; set; }
+
+        [Parameter(Position = 2, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
+        [ValidateNotNullOrEmpty]
+        public string Computer { get; set; }
+
+        [Parameter(Position = 3, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
+        [Credential, ValidateNotNullOrEmpty]
+        public PSCredential Credential { get; set; }
 
         private static IEnumerable<SNMPTrap> _SNMPTrap;
         private static IEnumerable<SNMPTrap> _DelTrap;
@@ -36,26 +45,40 @@ namespace RemoveSNMPTrap.cmd
                 }
             }
 
-            WriteVerbose("Checking SNMP Service is installed...");
-            SNMPAgentCommon.ServiceCheck();
-
             List<SNMPTrap> delTraps = new List<SNMPTrap>();
 
             if (Community.Count() > 0 && Destination != null)
-            { 
+            {
                 foreach (string communityName in Community)
                 {
                     foreach (string dest in Destination)
                     {
                         delTraps.Add(new SNMPTrap { Community = communityName, Destination = dest });
                     }
-                }                
+                }
             }
 
             _DelTrap = delTraps;
 
-            WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
-            _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                var Match = Regex.Match(Computer, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
+                if (!Match.Success)
+                {
+                    throw new ArgumentException("Specified Computer is not a valid hostname: " + Host);
+                }
+                WriteVerbose("Retrieving current SNMP Trap Communities and Destinations from Computer: " + Computer);
+                _SNMPTrap = SNMPRemote.RemoteGetSNMPTrap(Computer, Credential);
+            }
+            else
+            {
+
+                WriteVerbose("Checking SNMP Service is installed...");
+                SNMPAgentCommon.ServiceCheck();
+
+                WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
+                _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+            }
 
             base.BeginProcessing();
         }
@@ -67,18 +90,42 @@ namespace RemoveSNMPTrap.cmd
 
             if (Community.Count() > 0 && Destination == null)
             {
-                WriteVerbose("Removing SNMP Trap Community and all associated Destinations...");
-                DelCommunity(Community);
+                if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+                {
+                    WriteVerbose("Removing SNMP Trap Community and all associated Destinations from Computer: " + Computer);
+                    SNMPRemote.RemoteDelCommunity(Community, Computer, Credential);
+                }
+                else
+                {
+                    WriteVerbose("Removing SNMP Trap Community and all associated Destinations...");
+                    DelCommunity(Community);
+                }
             }
             else
             {
                 var removeTraps = results.Intersect(delTraps, new SNMPTrapComparer());
-                WriteVerbose("Removing specified SNMP Trap Destinations for specified Community Names...");
-                DelTraps(removeTraps);
+                if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+                {
+                    WriteVerbose("Removing specified SNMP Trap Destinations for specified Community Names from Computer: " + Computer);
+                    SNMPRemote.RemoteDelTraps(removeTraps, Computer, Credential);
+                }
+                else
+                {
+                    WriteVerbose("Removing specified SNMP Trap Destinations for specified Community Names...");
+                    DelTraps(removeTraps);
+                }
             }
 
-            WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
-            _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                WriteVerbose("Retrieving current SNMP Trap Communities and Destinations from Computer: " + Computer);
+                _SNMPTrap = SNMPRemote.RemoteGetSNMPTrap(Computer, Credential);
+            }
+            else
+            {
+                WriteVerbose("Retrieving current SNMP Trap Communities and Destinations...");
+                _SNMPTrap = SNMPAgentCommon.GetSNMPTraps();
+            }
 
             base.ProcessRecord();
         }
@@ -146,13 +193,6 @@ namespace RemoveSNMPTrap.cmd
                 SubKey.DeleteValue(delTarget.ValueName);
                 SubKey.Close();
             }
-        }
-
-        private class RegTrapValueMap
-        {
-            public string SubKey { get; set; }
-            public string ValueName { get; set; }
-            public string Value { get; set; }
         }
     }
 }
