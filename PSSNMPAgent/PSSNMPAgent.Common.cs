@@ -35,7 +35,12 @@ namespace PSSNMPAgent.Common
         public bool SvcDatalink { get; set; }
         public bool SvcInternet { get; set; }
         public bool SvcEndToEnd { get; set; }
+    }
 
+    public class setSNMPProperties
+    {
+        public string PropertyName { get; set; }
+        public object PropertyValue { get; set; }
     }
 
     public class RegTrapValueMap

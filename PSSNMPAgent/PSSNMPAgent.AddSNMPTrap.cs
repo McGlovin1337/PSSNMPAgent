@@ -49,9 +49,14 @@ namespace AddSNMPTrap.cmd
 
             foreach (var communityName in Community)
             {
-                foreach (var dest in Destination)
+                if (Destination == null)
                 {
-                    newTraps.Add(new SNMPTrap { Community = communityName, Destination = dest });
+                    newTraps.Add(new SNMPTrap { Community = communityName });
+                }
+                else
+                {
+                    foreach (var dest in Destination)
+                        newTraps.Add(new SNMPTrap { Community = communityName, Destination = dest });
                 }
             }
 
@@ -145,15 +150,18 @@ namespace AddSNMPTrap.cmd
                     List<string> values = TrapSubKey.GetValueNames().ToList();
                     values.RemoveAll(x => x == "(Default)");
                     IEnumerable<int> Values = values.Select(x => int.Parse(x)).ToList();
-                    valueStart = Values.Max();
-                    valueStart++;
+                    valueStart = Values.Max() + 1;
                     TrapSubKey.Close();
                 }
                 RegistryKey trapSubKey = Registry.LocalMachine.CreateSubKey(common.RegTraps + @"\" + Community);
-                foreach (string Destination in Destinations)
+
+                if (Destinations != null)
                 {
-                    trapSubKey.SetValue(valueStart.ToString(), Destination);
-                    valueStart++;
+                    foreach (string Destination in Destinations)
+                    {
+                        trapSubKey.SetValue(valueStart.ToString(), Destination);
+                        valueStart++;
+                    }
                 }
             }           
         }

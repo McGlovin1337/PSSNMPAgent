@@ -4,6 +4,7 @@ using System.Linq;
 using System.Management.Automation;
 using PSSNMPAgent.Common;
 using Microsoft.Win32;
+using PSSNMPAgent.Remote;
 
 namespace SetSNMPProperties.cmd
 {
@@ -12,18 +13,18 @@ namespace SetSNMPProperties.cmd
 
     public class PSSNMPAgent: PSCmdlet
     {
-        [Parameter(Position = 0, ValueFromPipelineByPropertyName = true, HelpMessage = "Set System Contact Details")]
+        [Parameter(Position = 2, ValueFromPipelineByPropertyName = true, HelpMessage = "Set System Contact Details")]
         [AllowNull, AllowEmptyString]
         public string SysContact { get; set; }
 
-        [Parameter(Position = 1, ValueFromPipelineByPropertyName = true, HelpMessage = "Set System Location Details")]
+        [Parameter(Position = 3, ValueFromPipelineByPropertyName = true, HelpMessage = "Set System Location Details")]
         [AllowNull, AllowEmptyString]
         public string SysLocation { get; set; }
 
-        [Parameter(Position = 2, HelpMessage = "Enable/Disable Authentication Traps")]
+        [Parameter(Position = 0, HelpMessage = "Enable/Disable Authentication Traps")]
         public SwitchParameter EnableAuthTraps { get; set; }
 
-        [Parameter(Position = 3, ValueFromPipelineByPropertyName = true, HelpMessage = "Number of Name Resolution Retries")]
+        [Parameter(Position = 1, ValueFromPipelineByPropertyName = true, HelpMessage = "Number of Name Resolution Retries")]
         public int NameResolutionRetries { get; set; }
 
         [Parameter(Position = 4, HelpMessage = "Enable/Disable Service: Physical")]
@@ -41,109 +42,54 @@ namespace SetSNMPProperties.cmd
         [Parameter(Position = 8, HelpMessage = "Enable/Disable Service: End-to-End")]
         public SwitchParameter SvcEndToEnd { get; set; }
 
-        private IEnumerable<SNMPProperties> _SNMPProperties;        
+        [Parameter(Position = 9, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
+        [ValidateNotNullOrEmpty]
+        public string Computer { get; set; }
+
+        [Parameter(Position = 10, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
+        [Credential, ValidateNotNullOrEmpty]
+        public PSCredential Credential { get; set; }
+
+        private IEnumerable<SNMPProperties> _SNMPProperties;
+        private IEnumerable<setSNMPProperties> _setSNMPProperties;
 
         protected override void BeginProcessing()
         {
-            WriteVerbose("Retrieving current SNMP Properties...");
-            _SNMPProperties = SNMPAgentCommon.GetSNMPProperties();
+            List<setSNMPProperties> newProperties = new List<setSNMPProperties>();
+
+            foreach (var Param in MyInvocation.BoundParameters)
+            {
+                newProperties.Add(new setSNMPProperties { PropertyName = Param.Key, PropertyValue = Param.Value });
+            }
+
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                WriteVerbose("Retrieving current SNMP Properties from Computer: " + Computer);
+                _SNMPProperties = SNMPRemote.RemoteGetSNMPProperties(Computer, Credential);
+            }
+            else
+            {
+                WriteVerbose("Retrieving current SNMP Properties...");
+                _SNMPProperties = SNMPAgentCommon.GetSNMPProperties();
+            }
+
+            _setSNMPProperties = SanitiseProperties(newProperties);
 
             base.BeginProcessing();
         }
 
         protected override void ProcessRecord()
         {
-            var results = _SNMPProperties;
-
-            SNMPAgentCommon common = new SNMPAgentCommon();
-
-            RegistryKey RegRoot = Registry.LocalMachine.CreateSubKey(common.RegRootSubKey);
-            RegistryKey RegRFC = Registry.LocalMachine.CreateSubKey(common.RegRFC1156);
-
-            int sysSvcValue = (int)RegRFC.GetValue("sysServices");
-            int origSvcValue = sysSvcValue;
-
-            if (MyInvocation.BoundParameters.ContainsKey("SysContact"))
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
             {
-                RegRFC.SetValue("SysContact", SysContact);
+                SNMPRemote.RemoteSetSNMPProperties(_setSNMPProperties, Computer, Credential);
+                _SNMPProperties = SNMPRemote.RemoteGetSNMPProperties(Computer, Credential);
             }
-
-            if (MyInvocation.BoundParameters.ContainsKey("SysLocation"))
+            else
             {
-                RegRFC.SetValue("SysLocation", SysLocation);
-            }
-
-            if (MyInvocation.BoundParameters.ContainsKey("EnableAuthTraps"))
-            {
-                RegRoot.SetValue("EnableAuthenticationTraps", EnableAuthTraps);
-            }
-
-            if (MyInvocation.BoundParameters.ContainsKey("NameResolutionRetries"))
-            {
-                RegRoot.SetValue("NameResolutionRetries", NameResolutionRetries);
-            }
-
-            if (MyInvocation.BoundParameters.ContainsKey("SvcPhysical"))
-            {
-                foreach (var result in results)
-                {
-                    if (!SvcPhysical == result.SvcPhysical)
-                    {
-                        sysSvcValue = (SvcPhysical == true) ? sysSvcValue + 1 : sysSvcValue - 1;
-                    }
-                }
-            }
-
-            if (MyInvocation.BoundParameters.ContainsKey("SvcApplications"))
-            {
-                foreach (var result in results)
-                {
-                    if (!SvcApplications == result.SvcApplications)
-                    {
-                        sysSvcValue = (SvcApplications == true) ? sysSvcValue + 64 : sysSvcValue - 64;
-                    }
-                }
-            }
-
-            if (MyInvocation.BoundParameters.ContainsKey("SvcDatalink"))
-            {
-                foreach (var result in results)
-                {
-                    if (!SvcDatalink == result.SvcDatalink)
-                    {
-                        sysSvcValue = (SvcDatalink == true) ? sysSvcValue + 2 : sysSvcValue - 2;
-                    }
-                }
-            }
-
-            if (MyInvocation.BoundParameters.ContainsKey("SvcInternet"))
-            {
-                foreach (var result in results)
-                {
-                    if (!SvcInternet == result.SvcInternet)
-                    {
-                        sysSvcValue = (SvcInternet == true) ? sysSvcValue + 4 : sysSvcValue - 4;
-                    }
-                }
-            }
-
-            if (MyInvocation.BoundParameters.ContainsKey("SvcEndToEnd"))
-            {
-                foreach (var result in results)
-                {
-                    if (!SvcEndToEnd == result.SvcEndToEnd)
-                    {
-                        sysSvcValue = (SvcEndToEnd == true) ? sysSvcValue + 8 : sysSvcValue - 8;
-                    }
-                }
-            }
-
-            if (sysSvcValue != origSvcValue)
-            {
-                RegRFC.SetValue("sysServices", sysSvcValue);
-            }
-
-            _SNMPProperties = SNMPAgentCommon.GetSNMPProperties();
+                SetSNMPProperties(_setSNMPProperties);
+                _SNMPProperties = SNMPAgentCommon.GetSNMPProperties();
+            }            
 
             base.ProcessRecord();
         }
@@ -155,6 +101,105 @@ namespace SetSNMPProperties.cmd
             results.ToList().ForEach(WriteObject);
 
             base.EndProcessing();
+        }
+
+        private static void SetSNMPProperties(IEnumerable<setSNMPProperties> SetProperties)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+
+            RegistryKey RegRoot = Registry.LocalMachine.CreateSubKey(common.RegRootSubKey);
+            RegistryKey RegRFC = Registry.LocalMachine.CreateSubKey(common.RegRFC1156);
+
+            int sysSvcValue = (int)RegRFC.GetValue("sysServices");
+            
+            foreach (var Property in SetProperties)
+            {
+                switch(Property.PropertyName)
+                {
+                    case "sysContact":
+                    case "sysLocation":
+                        RegRFC.SetValue(Property.PropertyName, Property.PropertyValue);
+                        break;
+                    case "EnableAuthenticationTraps":
+                    case "NameResolutionRetries":
+                        RegRoot.SetValue(Property.PropertyName, Property.PropertyValue, RegistryValueKind.DWord);
+                        break;
+                    case "sysServices":
+                        if (Property.PropertyValue != null)
+                            sysSvcValue = sysSvcValue + (int)Property.PropertyValue;
+                        RegRFC.SetValue(Property.PropertyName, sysSvcValue, RegistryValueKind.DWord);
+                        break;
+                }
+            }
+
+            RegRFC.Close();
+            RegRoot.Close();
+        }
+
+        private IEnumerable<setSNMPProperties> SanitiseProperties(IEnumerable<setSNMPProperties> inputParameters)
+        {
+            var currentProperties = _SNMPProperties;
+
+            List<setSNMPProperties> cleanSNMPProperties = new List<setSNMPProperties>();
+                        
+            foreach (var Parameter in inputParameters)
+            {
+                if (Parameter.PropertyName == "SysContact" || Parameter.PropertyName == "SysLocation")
+                {
+                    string lowerPropertyName = char.ToLowerInvariant(Parameter.PropertyName[0]) + Parameter.PropertyName.Substring(1);
+                    cleanSNMPProperties.Add(new setSNMPProperties { PropertyName = lowerPropertyName, PropertyValue = Parameter.PropertyValue });
+                }
+
+                if (Parameter.PropertyName == "EnableAuthTraps")
+                {
+                    bool paramVal = Convert.ToBoolean((Parameter.PropertyValue).ToString());
+                    cleanSNMPProperties.Add(new setSNMPProperties { PropertyName = "EnableAuthenticationTraps", PropertyValue = paramVal });
+                }
+
+                if (Parameter.PropertyName == "NameResolutionRetries")
+                {
+                    if ((int)Parameter.PropertyValue < 0)
+                        throw new Exception("NameResolutionRetries Parameter Out of Range");
+
+                    cleanSNMPProperties.Add(new setSNMPProperties { PropertyName = Parameter.PropertyName, PropertyValue = Parameter.PropertyValue });
+                }
+
+                int SvcValue = 0;
+                if (Parameter.PropertyName == "SvcPhysical" || Parameter.PropertyName == "SvcApplications" || Parameter.PropertyName == "SvcDatalink" || Parameter.PropertyName == "SvcInternet" || Parameter.PropertyName == "SvcEndToEnd")
+                {
+                    bool currentValue = false;
+                    foreach (var prop in currentProperties)
+                    {
+                        currentValue = (bool)prop.GetType().GetProperty(Parameter.PropertyName).GetValue(prop);
+                    }
+
+                    bool paramValue = Convert.ToBoolean((Parameter.PropertyValue).ToString());
+                    if (!paramValue == currentValue)
+                    {
+                        switch(Parameter.PropertyName)
+                        {
+                            case "SvcPhysical":
+                                SvcValue = (paramValue == true) ? SvcValue + 1 : SvcValue - 1;
+                                break;
+                            case "SvcApplications":
+                                SvcValue = (paramValue == true) ? SvcValue + 64 : SvcValue - 64;
+                                break;
+                            case "SvcDatalink":
+                                SvcValue = (paramValue == true) ? SvcValue + 2 : SvcValue - 2;
+                                break;
+                            case "SvcInternet":
+                                SvcValue = (paramValue == true) ? SvcValue + 4 : SvcValue - 4;
+                                break;
+                            case "SvcEndToEnd":
+                                SvcValue = (paramValue == true) ? SvcValue + 8 : SvcValue - 8;
+                                break;
+                        }
+                    }
+                }
+                cleanSNMPProperties.Add(new setSNMPProperties { PropertyName = "sysServices", PropertyValue = SvcValue });
+            }
+
+            return cleanSNMPProperties;
         }
     }
 }
