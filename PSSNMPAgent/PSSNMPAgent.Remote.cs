@@ -538,17 +538,20 @@ namespace PSSNMPAgent.Remote
             mboIn.Dispose();
             mboOut.Dispose();
 
-            mboIn = mc.GetMethodParameters("DeleteValue");
-            mboIn["hDefKey"] = (UInt32)2147483650;
-            mboIn["sSubKeyName"] = common.RegCommunities;
-
-            foreach (string value in valueNames)
+            if (valueNames != null)
             {
-                mboIn["sValueName"] = value;
-                if (value != "(Default)") mc.InvokeMethod("DeleteValue", mboIn, null);
+                mboIn = mc.GetMethodParameters("DeleteValue");
+                mboIn["hDefKey"] = (UInt32)2147483650;
+                mboIn["sSubKeyName"] = common.RegCommunities;
+
+                foreach (string value in valueNames)
+                {
+                    mboIn["sValueName"] = value;
+                    if (value != "(Default)") mc.InvokeMethod("DeleteValue", mboIn, null);
+                }
+                mboIn.Dispose();
+                Array.Clear(valueNames, 0, valueNames.Length);
             }
-            mboIn.Dispose();
-            Array.Clear(valueNames, 0, valueNames.Length);
 
             mboIn = mc.GetMethodParameters("EnumValues");
             mboIn["hDefKey"] = (UInt32)2147483650;
@@ -559,17 +562,20 @@ namespace PSSNMPAgent.Remote
             mboIn.Dispose();
             mboOut.Dispose();
 
-            mboIn = mc.GetMethodParameters("DeleteValue");
-            mboIn["hDefKey"] = (UInt32)2147483650;
-            mboIn["sSubKeyName"] = common.RegCommunities;
-
-            foreach (string value in valueNames)
+            if (valueNames != null)
             {
-                mboIn["sValueName"] = value;
-                if (value != "(Default)") mc.InvokeMethod("DeleteValue", mboIn, null);
+                mboIn = mc.GetMethodParameters("DeleteValue");
+                mboIn["hDefKey"] = (UInt32)2147483650;
+                mboIn["sSubKeyName"] = common.RegHosts;
+
+                foreach (string value in valueNames)
+                {
+                    mboIn["sValueName"] = value;
+                    if (value != "(Default)") mc.InvokeMethod("DeleteValue", mboIn, null);
+                }
+                mboIn.Dispose();
+                Array.Clear(valueNames, 0, valueNames.Length);
             }
-            mboIn.Dispose();
-            Array.Clear(valueNames, 0, valueNames.Length);
 
             mboIn = mc.GetMethodParameters("SetStringValue");
             mboIn["hDefKey"] = (UInt32)2147483650;
@@ -589,15 +595,18 @@ namespace PSSNMPAgent.Remote
             mboIn.Dispose();
             mboOut.Dispose();
 
-            mboIn = mc.GetMethodParameters("DeleteKey");
-            mboIn["hDefKey"] = (UInt32)2147483650;
-
-            foreach (string valueName in valueNames)
+            if (valueNames != null)
             {
-                mboIn["sSubKeyName"] = common.RegTraps + @"\" + valueName;
-                mc.InvokeMethod("DeleteKey", mboIn, null);
+                mboIn = mc.GetMethodParameters("DeleteKey");
+                mboIn["hDefKey"] = (UInt32)2147483650;
+
+                foreach (string valueName in valueNames)
+                {
+                    mboIn["sSubKeyName"] = common.RegTraps + @"\" + valueName;
+                    mc.InvokeMethod("DeleteKey", mboIn, null);
+                }
+                mboIn.Dispose();
             }
-            mboIn.Dispose();
 
             mboIn = mc.GetMethodParameters("SetStringValue");
             mboIn["hDefKey"] = (UInt32)2147483650;
