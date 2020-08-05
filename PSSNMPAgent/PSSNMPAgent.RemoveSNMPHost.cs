@@ -3,103 +3,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using PSSNMPAgent.Common;
-using System.Text.RegularExpressions;
 using Microsoft.Win32;
-using PSSNMPAgent.Remote;
+using System.Management;
 
-namespace RemoveSNMPHost.cmd
+namespace PSSNMPAgent.SNMPHostCmdlets
 {
     [Cmdlet(VerbsCommon.Remove, nameof(SNMPHost))]
-    public class RemoveSNMPHost : PSCmdlet
+    public class RemoveSNMPHost: BaseSNMPHost
     {
-        [Parameter(Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Remove SNMP Permitted Managers")]
+        [Parameter(Position = 0, ParameterSetName = "Default", ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Remove SNMP Permitted Managers")]
         [Alias("Hosts", "Host", "Manager", "PermittedManager")]
         public string[] PermittedHost { get; set; }
 
         [Parameter(Position = 1, ParameterSetName = "RemoveAll", ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Remove all SNMP Permitted Managers")]
         public SwitchParameter RemoveAllHosts { get; set; }
 
-        [Parameter(Position = 2, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
-        [ValidateNotNullOrEmpty]
-        public string Computer { get; set; }
-
-        [Parameter(Position = 3, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
-        [Credential, ValidateNotNullOrEmpty]
-        public PSCredential Credential { get; set; }
-
-        private static IEnumerable<SNMPHost> _SNMPHosts;
-
-        protected override void BeginProcessing()
-        {
-            if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
-            {
-                foreach (string Host in PermittedHost)
-                {
-                    var Match = Regex.Match(Host, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
-                    if (!Match.Success)
-                    {
-                        throw new ArgumentException("Specified Host is not a valid hostname: " + Host);
-                    }
-                }
-            }
-
-            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
-            {
-                var Match = Regex.Match(Computer, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
-                if (!Match.Success)
-                {
-                    throw new ArgumentException("Specified Computer is not a valid hostname: " + Host);
-                }
-                WriteVerbose("Retrieving list of current SNMP Hosts from Computer: " + Computer);
-                _SNMPHosts = SNMPRemote.RemoteGetSNMPHosts(Computer, Credential);
-            }
-            else
-            {
-                WriteVerbose("Checking SNMP Service is installed...");
-                SNMPAgentCommon.ServiceCheck();
-
-                WriteVerbose("Retrieving list of current SNMP Hosts...");
-                _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
-            }
-
-            base.BeginProcessing();
-        }
+        IEnumerable<string> _validHostsQuery;
 
         protected override void ProcessRecord()
         {
-            var results = _SNMPHosts;
-
-            if (results.Count() == 0)
+            if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
             {
-                throw new Exception("Host list is empty, no hosts to remove");
-            }
+                WriteVerbose("Validating " + PermittedHost.Count() + " submitted PermittedHost hostnames...");
+                IEnumerable<ValidateHostname> validatedHosts = ValidateHostname.ValidateHostnames(PermittedHost);
 
-            if (!MyInvocation.BoundParameters.ContainsKey("RemoveAllHosts"))
-            {
-                string[] LowerHost = Array.ConvertAll(PermittedHost, host => host.ToLower());
-
-                results = results.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
-
-                if (results.Count() == 0)
+                IEnumerable<string> ValidHosts = validatedHosts.Where(valid => valid.ValidHostnames != null).Select(valid => valid.ValidHostnames);
+                IEnumerable<string> InvalidHosts = validatedHosts.Where(valid => valid.InvalidHostnames != null).Select(valid => valid.InvalidHostnames);
+                WriteVerbose("Yielded " + ValidHosts.Count() + " Valid Hostnames.");
+                WriteVerbose("Yielded " + InvalidHosts.Count() + " Invalid Hostnames.");
+                if (MyInvocation.BoundParameters.ContainsKey("Verbose"))
                 {
-                    throw new Exception("None of the specified hosts were found");
+                    foreach (string invalidHost in InvalidHosts)
+                        WriteVerbose(invalidHost + " is not a valid hostname!");
                 }
-            }
 
-            WriteVerbose("Removing specified SNMP Permitted Hosts...");
-            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
-            {
-                SNMPRemote.RemoteRemoveSNMPHosts(results, Computer, Credential);
-
-                WriteVerbose("Retrieving list of current SNMP Hosts from Computer: " + Computer);
-                _SNMPHosts = SNMPRemote.RemoteGetSNMPHosts(Computer, Credential);
-            }
-            else
-            {
-                RemoveSNMPHosts(results);
-
-                WriteVerbose("Retrieving list of current SNMP Hosts...");
-                _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
+                _validHostsQuery = ValidHosts;
             }
 
             base.ProcessRecord();
@@ -107,38 +45,70 @@ namespace RemoveSNMPHost.cmd
 
         protected override void EndProcessing()
         {
-            var results = _SNMPHosts;
+            _validHostsQuery = null;
+        }
 
-            results.ToList().ForEach(WriteObject);
+        protected override void ProcessSNMPHost(IEnumerable<SNMPHost> SNMPHosts)
+        {
+            // Prepare
+            IEnumerable<string> ValidHostsQuery = _validHostsQuery;
 
-            if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
+            if (SNMPHosts.Count() == 0)
             {
-                string[] LowerHost = Array.ConvertAll(PermittedHost, host => host.ToLower());
+                throw new Exception("Host list is empty, no hosts to remove");
+            }
 
-                if (results.Count() > 0)
+            if (!MyInvocation.BoundParameters.ContainsKey("RemoveAllHosts"))
+            {
+                string[] LowerHost = Array.ConvertAll(ValidHostsQuery.ToArray(), host => host.ToLower());
+
+                SNMPHosts = SNMPHosts.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
+
+                if (SNMPHosts.Count() == 0)
                 {
-                    results = results.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
+                    throw new Exception("None of the specified hosts were found");
                 }
             }
 
-            if (results.Count() == 0)
+            // Execute
+            WriteVerbose("Removing specified SNMP Permitted Hosts...");
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
             {
-                WriteVerbose("Specified hosts removed");
+                RemoteRemoveSNMPHosts(SNMPHosts, Computer, Credential);
+
+                WriteVerbose("Retrieving list of current SNMP Hosts from Computer: " + Computer);
+                SNMPHosts = RemoteGetSNMPHosts(Computer, Credential);
             }
             else
             {
-                if (MyInvocation.BoundParameters.ContainsKey("Verbose"))
-                {
-                    WriteVerbose("Failed to remove the following hosts:");
-                    foreach (var result in results)
-                    {
-                        WriteVerbose(result.PermittedHost);
-                    }
-                }
-                throw new Exception("Some hosts failed to remove");
+                RemoveSNMPHosts(SNMPHosts);
+
+                WriteVerbose("Retrieving list of current SNMP Hosts...");
+                SNMPHosts = GetSNMPHosts();
             }
 
-            base.EndProcessing();
+            // Confirm
+            if (ValidHostsQuery != null)
+            {
+                string[] LowerHost = Array.ConvertAll(ValidHostsQuery.ToArray(), host => host.ToLower());
+
+                if (SNMPHosts.Count() > 0)
+                {
+                    SNMPHosts = SNMPHosts.Where(host => LowerHost.Contains(host.PermittedHost.ToLower()));
+                }
+            }
+
+            if (SNMPHosts.Count() == 0)
+            {
+                WriteObject("Specified hosts removed");
+            }
+            else
+            {
+                foreach (var host in SNMPHosts)
+                {
+                    WriteObject("Failed to remove host: " + host.PermittedHost);
+                }
+            }
         }
 
         private static void RemoveSNMPHosts(IEnumerable<SNMPHost> Hosts)
@@ -169,6 +139,64 @@ namespace RemoveSNMPHost.cmd
                 RegHosts.DeleteValue(value);
             }
             RegHosts.Close();
+        }
+
+        private static void RemoteRemoveSNMPHosts(IEnumerable<SNMPHost> Hosts, string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+
+            ManagementClass mc = SNMPAgentCommon.RemoteConnect(Computer, Credential);
+
+            List<string> valueNames = new List<string>();
+            string[] LowerHosts = Hosts.Select(host => host.PermittedHost).ToArray();
+            LowerHosts = Array.ConvertAll(LowerHosts, host => host.ToLower());
+            string hostname;
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("EnumValues");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegHosts;
+
+            ManagementBaseObject mboOut = mc.InvokeMethod("EnumValues", mboIn, null);
+            string[] ValueNames = (string[])mboOut["sNames"];
+
+            mboIn.Dispose();
+            mboOut.Dispose();
+
+            if (ValueNames == null) return;
+
+            mboIn = mc.GetMethodParameters("GetStringValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegHosts;
+
+            foreach (string valueName in ValueNames)
+            {
+                if (valueName != "(Default)")
+                {
+                    mboIn["sValueName"] = valueName;
+
+                    mboOut = mc.InvokeMethod("GetStringValue", mboIn, null);
+                    hostname = (string)mboOut["sValue"];
+                    mboOut.Dispose();
+
+                    if (LowerHosts.Contains(hostname.ToLower()))
+                    {
+                        valueNames.Add(valueName);
+                    }
+                }
+            }
+            mboIn.Dispose();
+
+            mboIn = mc.GetMethodParameters("DeleteValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegHosts;
+
+            foreach (string value in valueNames)
+            {
+                mboIn["sValueName"] = value;
+
+                mc.InvokeMethod("DeleteValue", mboIn, null);
+            }
+            mboIn.Dispose();
         }
     }
 }

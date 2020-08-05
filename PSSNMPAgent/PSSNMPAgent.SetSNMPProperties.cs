@@ -4,14 +4,14 @@ using System.Linq;
 using System.Management.Automation;
 using PSSNMPAgent.Common;
 using Microsoft.Win32;
-using PSSNMPAgent.Remote;
+using System.Management;
 
-namespace SetSNMPProperties.cmd
+namespace PSSNMPAgent.SNMPPropertyCmdlets
 {
     [Cmdlet(VerbsCommon.Set, nameof(SNMPProperties))]
     [OutputType(typeof(SNMPProperties))]
 
-    public class PSSNMPAgent: PSCmdlet
+    public class PSSNMPAgent: BaseSNMPProperties
     {
         [Parameter(Position = 2, ValueFromPipelineByPropertyName = true, HelpMessage = "Set System Contact Details")]
         [AllowNull, AllowEmptyString]
@@ -42,19 +42,9 @@ namespace SetSNMPProperties.cmd
         [Parameter(Position = 8, HelpMessage = "Enable/Disable Service: End-to-End")]
         public SwitchParameter SvcEndToEnd { get; set; }
 
-        [Parameter(Position = 9, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
-        [ValidateNotNullOrEmpty]
-        public string Computer { get; set; }
-
-        [Parameter(Position = 10, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
-        [Credential, ValidateNotNullOrEmpty]
-        public PSCredential Credential { get; set; }
-
-        private IEnumerable<SNMPProperties> _SNMPProperties;
-        private IEnumerable<setSNMPProperties> _setSNMPProperties;
-
-        protected override void BeginProcessing()
+        protected override void ProcessSNMPProperty(IEnumerable<SNMPProperties> SNMPProperties)
         {
+            // Prepare
             List<setSNMPProperties> newProperties = new List<setSNMPProperties>();
 
             foreach (var Param in MyInvocation.BoundParameters)
@@ -62,45 +52,22 @@ namespace SetSNMPProperties.cmd
                 newProperties.Add(new setSNMPProperties { PropertyName = Param.Key, PropertyValue = Param.Value });
             }
 
+            IEnumerable<setSNMPProperties> setSNMPProperties = SanitiseProperties(newProperties, SNMPProperties);
+
+            // Execute
             if (MyInvocation.BoundParameters.ContainsKey("Computer"))
             {
-                WriteVerbose("Retrieving current SNMP Properties from Computer: " + Computer);
-                _SNMPProperties = SNMPRemote.RemoteGetSNMPProperties(Computer, Credential);
+                RemoteSetSNMPProperties(setSNMPProperties, Computer, Credential);
+                SNMPProperties = RemoteGetSNMPProperties(Computer, Credential);
             }
             else
             {
-                WriteVerbose("Retrieving current SNMP Properties...");
-                _SNMPProperties = SNMPAgentCommon.GetSNMPProperties();
+                SetSNMPProperties(setSNMPProperties);
+                SNMPProperties = GetSNMPProperties();
             }
 
-            _setSNMPProperties = SanitiseProperties(newProperties);
-
-            base.BeginProcessing();
-        }
-
-        protected override void ProcessRecord()
-        {
-            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
-            {
-                SNMPRemote.RemoteSetSNMPProperties(_setSNMPProperties, Computer, Credential);
-                _SNMPProperties = SNMPRemote.RemoteGetSNMPProperties(Computer, Credential);
-            }
-            else
-            {
-                SetSNMPProperties(_setSNMPProperties);
-                _SNMPProperties = SNMPAgentCommon.GetSNMPProperties();
-            }            
-
-            base.ProcessRecord();
-        }
-
-        protected override void EndProcessing()
-        {
-            var results = _SNMPProperties;
-
-            results.ToList().ForEach(WriteObject);
-
-            base.EndProcessing();
+            // Confirm
+            SNMPProperties.ToList().ForEach(WriteObject);
         }
 
         private static void SetSNMPProperties(IEnumerable<setSNMPProperties> SetProperties)
@@ -136,10 +103,65 @@ namespace SetSNMPProperties.cmd
             RegRoot.Close();
         }
 
-        private IEnumerable<setSNMPProperties> SanitiseProperties(IEnumerable<setSNMPProperties> inputParameters)
+        private static void RemoteSetSNMPProperties(IEnumerable<setSNMPProperties> setSNMPProperties, string Computer, PSCredential Credential)
         {
-            var currentProperties = _SNMPProperties;
+            SNMPAgentCommon common = new SNMPAgentCommon();
 
+            ManagementClass mc = SNMPAgentCommon.RemoteConnect(Computer, Credential);
+            ManagementBaseObject mboIn;
+            ManagementBaseObject mboOut;
+
+            foreach (var Property in setSNMPProperties)
+            {
+                switch (Property.PropertyName)
+                {
+                    case "sysContact":
+                    case "sysLocation":
+                        mboIn = mc.GetMethodParameters("SetStringValue");
+                        mboIn["hDefKey"] = (UInt32)2147483650;
+                        mboIn["sSubKeyName"] = common.RegRFC1156;
+                        mboIn["sValueName"] = Property.PropertyName;
+                        mboIn["sValue"] = Property.PropertyValue.ToString();
+                        mc.InvokeMethod("SetStringValue", mboIn, null);
+                        mboIn.Dispose();
+                        break;
+                    case "EnableAuthenticationTraps":
+                    case "NameResolutionRetries":
+                        mboIn = mc.GetMethodParameters("SetDWORDValue");
+                        mboIn["hDefKey"] = (UInt32)2147483650;
+                        mboIn["sSubKeyName"] = common.RegRootSubKey;
+                        mboIn["sValueName"] = Property.PropertyName;
+                        mboIn["uValue"] = Property.PropertyValue;
+                        mc.InvokeMethod("SetDWORDValue", mboIn, null);
+                        mboIn.Dispose();
+                        break;
+                    case "sysServices":
+                        if (Property.PropertyValue != null)
+                        {
+                            mboIn = mc.GetMethodParameters("GetDWORDValue");
+                            mboIn["hDefKey"] = (UInt32)2147483650;
+                            mboIn["sSubKeyName"] = common.RegRFC1156;
+                            mboIn["sValueName"] = "sysServices";
+                            mboOut = mc.InvokeMethod("GetDWORDValue", mboIn, null);
+                            int sysSvcValue = Convert.ToInt32((UInt32)mboOut["uValue"]);
+
+                            sysSvcValue = sysSvcValue + Convert.ToInt32(Property.PropertyValue);
+
+                            mboIn = mc.GetMethodParameters("SetDWORDValue");
+                            mboIn["hDefKey"] = (UInt32)2147483650;
+                            mboIn["sSubKeyName"] = common.RegRFC1156;
+                            mboIn["sValueName"] = Property.PropertyName;
+                            mboIn["uValue"] = sysSvcValue;
+                            mc.InvokeMethod("SetDWORDValue", mboIn, null);
+                            mboIn.Dispose();
+                        }
+                        break;
+                }
+            }
+        }
+
+        private IEnumerable<setSNMPProperties> SanitiseProperties(IEnumerable<setSNMPProperties> inputParameters, IEnumerable<SNMPProperties> currentProperties)
+        {
             List<setSNMPProperties> cleanSNMPProperties = new List<setSNMPProperties>();
                         
             foreach (var Parameter in inputParameters)
@@ -200,6 +222,12 @@ namespace SetSNMPProperties.cmd
             }
 
             return cleanSNMPProperties;
+        }
+
+        private class setSNMPProperties
+        {
+            public string PropertyName { get; set; }
+            public object PropertyValue { get; set; }
         }
     }
 }

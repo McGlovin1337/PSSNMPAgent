@@ -13,7 +13,7 @@ Add new SNMP Community Names
 ## SYNTAX
 
 ```
-Add-SNMPCommunity -Community <String[]> [[-AccessRight] <String>] [-Computer <String>]
+Add-SNMPCommunity [[-AccessRight] <String>] [-Community <String[]>] [-Computer <String>]
  [-Credential <PSCredential>] [<CommonParameters>]
 ```
 
@@ -36,7 +36,7 @@ Adds a new SNMP Community with the Access Right of ReadCreate
 ## PARAMETERS
 
 ### -AccessRight
-The Acces Right to assign to new Community Names
+The Access Right to assign to new Community Names
 
 ```yaml
 Type: String
@@ -59,7 +59,7 @@ Type: String[]
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)

@@ -49,12 +49,15 @@
     <Compile Include="PSSNMPAgent\PSSNMPAgent.AddSNMPCommunity.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.AddSNMPHost.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.AddSNMPTrap.cs" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.BaseSNMPCommunity.cs" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.BaseSNMPHost.cs" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.BaseSNMPProperties.cs" />
+    <Compile Include="PSSNMPAgent\PSSNMPAgent.BaseSNMPTrap.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPTrap.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPHost.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.Common.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.GetSNMPCommunity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PSSNMPAgent\PSSNMPAgent.Remote.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.RemoveSNMPCommunity.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.RemoveSNMPHost.cs" />
     <Compile Include="PSSNMPAgent\PSSNMPAgent.RemoveSNMPTrap.cs" />

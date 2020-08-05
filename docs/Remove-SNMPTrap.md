@@ -13,7 +13,7 @@ Remove SNMP Trap Community Names and Destination Hosts
 ## SYNTAX
 
 ```
-Remove-SNMPTrap [-Community] <String[]> [[-Destination] <String[]>] [-Computer <String>]
+Remove-SNMPTrap [[-Community] <String[]>] [[-Destination] <String[]>] [-Computer <String>]
  [-Credential <PSCredential>] [<CommonParameters>]
 ```
 
@@ -46,7 +46,7 @@ Type: String[]
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: 0
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)

@@ -13,7 +13,7 @@ Add new SNMP Trap Community Names and Destination Hosts
 ## SYNTAX
 
 ```
-Add-SNMPTrap [-Community] <String[]> [[-Destination] <String[]>] [-Computer <String>]
+Add-SNMPTrap [[-Community] <String[]>] [[-Destination] <String[]>] [-Computer <String>]
  [-Credential <PSCredential>] [<CommonParameters>]
 ```
 
@@ -44,7 +44,7 @@ Type: String[]
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: 0
 Default value: None
 Accept pipeline input: True (ByPropertyName, ByValue)

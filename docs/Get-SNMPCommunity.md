@@ -13,7 +13,7 @@ Get SNMP Agent Communities and Allowed Hosts
 ## SYNTAX
 
 ```
-Get-SNMPCommunity [-Community <String[]>] [-AccessRight <String[]>] [-Computer <String>]
+Get-SNMPCommunity [-AccessRight <String[]>] [-Community <String[]>] [-Computer <String>]
  [-Credential <PSCredential>] [<CommonParameters>]
 ```
 

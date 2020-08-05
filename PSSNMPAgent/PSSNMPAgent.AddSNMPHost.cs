@@ -3,105 +3,40 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using PSSNMPAgent.Common;
-using System.Text.RegularExpressions;
 using Microsoft.Win32;
-using PSSNMPAgent.Remote;
+using System.Management;
 
-namespace AddSNMPHost.cmd
+namespace PSSNMPAgent.SNMPHostCmdlets
 {
     [Cmdlet(VerbsCommon.Add, nameof(SNMPHost))]
     [OutputType(typeof(SNMPHost))]
 
-    public class AddSNMPHost : PSCmdlet
+    public class AddSNMPHost: BaseSNMPHost
     {
         [Parameter(Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true, Mandatory = true, HelpMessage = "Add a new SNMP Permitted Manager")]
         [Alias("Hosts", "Host", "Manager", "PermittedManager")]
         public string[] PermittedHost { get; set; }
 
-        [Parameter(Position = 1, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Connect to Computer")]
-        [ValidateNotNullOrEmpty]
-        public string Computer { get; set; }
-
-        [Parameter(Position = 2, ParameterSetName = "Remote", ValueFromPipelineByPropertyName = true, HelpMessage = "Remote Computer Credentials")]
-        [Credential, ValidateNotNullOrEmpty]
-        public PSCredential Credential { get; set; }
-
-        private static IEnumerable<SNMPHost> _SNMPHosts;
-
-        protected override void BeginProcessing()
-        {
-            if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
-            {
-                foreach (string Host in PermittedHost)
-                {
-                    var Match = Regex.Match(Host, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
-                    if (!Match.Success)
-                    {
-                        throw new ArgumentException("Specified Host is not a valid hostname: " + Host);
-                    }
-                }
-            }
-
-            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
-            {
-                var Match = Regex.Match(Computer, @"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$");
-                if (!Match.Success)
-                {
-                    throw new ArgumentException("Specified Computer is not a valid hostname: " + Host);
-                }
-                WriteVerbose("Retrieving list of current SNMP Hosts from Computer: " + Computer);
-                _SNMPHosts = SNMPRemote.RemoteGetSNMPHosts(Computer, Credential);
-            }
-            else
-            {
-                WriteVerbose("Checking SNMP Service is installed...");
-                SNMPAgentCommon.ServiceCheck();
-
-                WriteVerbose("Retrieving list of current SNMP Hosts...");
-                _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
-            }
-
-            base.BeginProcessing();
-        }
+        private static IEnumerable<string> _validHostsQuery;
 
         protected override void ProcessRecord()
         {
-            var results = _SNMPHosts;
-
-            string[] LowerHost = Array.ConvertAll(PermittedHost, host => host.ToLower());
-
-            if (results.Count() > 0)
+            if (MyInvocation.BoundParameters.ContainsKey("PermittedHost"))
             {
-                results = results.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
-            }
+                WriteVerbose("Validating " + PermittedHost.Count() + " submitted PermittedHost hostnames...");
+                IEnumerable<ValidateHostname> validatedHosts = ValidateHostname.ValidateHostnames(PermittedHost);
 
-            if (results.Count() > 0)
-            {
+                IEnumerable<string> ValidHosts = validatedHosts.Where(valid => valid.ValidHostnames != null).Select(valid => valid.ValidHostnames);
+                IEnumerable<string> InvalidHosts = validatedHosts.Where(valid => valid.InvalidHostnames != null).Select(valid => valid.InvalidHostnames);
+                WriteVerbose("Yielded " + ValidHosts.Count() + " Valid Hostnames.");
+                WriteVerbose("Yielded " + InvalidHosts.Count() + " Invalid Hostnames.");
                 if (MyInvocation.BoundParameters.ContainsKey("Verbose"))
                 {
-                    WriteVerbose("The following SNMP Hosts already exist:");
-                    foreach (var result in results)
-                    {
-                        WriteVerbose(result.PermittedHost);
-                    }
+                    foreach (string invalidHost in InvalidHosts)
+                        WriteVerbose(invalidHost + " is not a valid hostname!");
                 }
-                throw new Exception("SNMP Host already exists");
-            }
 
-            WriteVerbose("Adding " + PermittedHost.Count() + " hosts...");
-            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
-            {
-                SNMPRemote.RemoteAddSNMPHosts(PermittedHost, Computer, Credential);
-
-                WriteVerbose("Retrieving list of current SNMP Hosts from Computer: " + Computer);
-                _SNMPHosts = SNMPRemote.RemoteGetSNMPHosts(Computer, Credential);
-            }
-            else
-            {
-                AddSNMPHosts(PermittedHost);
-
-                WriteVerbose("Retrieving list of current SNMP Hosts...");
-                _SNMPHosts = SNMPAgentCommon.GetSNMPHosts();
+                _validHostsQuery = ValidHosts;
             }
 
             base.ProcessRecord();
@@ -109,14 +44,79 @@ namespace AddSNMPHost.cmd
 
         protected override void EndProcessing()
         {
-            var results = _SNMPHosts;
-            string[] LowerHost = Array.ConvertAll(PermittedHost, host => host.ToLower());
+            _validHostsQuery = null;
+        }
 
-            results = results.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
+        protected override void ProcessSNMPHost(IEnumerable<SNMPHost> SNMPHosts)
+        {
+            // Prepare
+            string[] validHostsQuery = _validHostsQuery.ToArray();
 
-            results.ToList().ForEach(WriteObject);
+            string[] LowerHost = Array.ConvertAll(validHostsQuery, host => host.ToLower());
 
-            base.EndProcessing();
+            if (SNMPHosts.Count() > 0)
+            {
+                SNMPHosts = SNMPHosts.Where(result => LowerHost.Contains(result.PermittedHost.ToLower()));
+            }
+
+            if (SNMPHosts.Count() > 0)
+            {
+                WriteVerbose("Hosts to be added already exist");
+
+                foreach (var hostExist in SNMPHosts)
+                {
+                    WriteVerbose("Removing " + hostExist.PermittedHost + " from list of hosts to be added...");
+                    validHostsQuery = validHostsQuery.Where(exist => exist != hostExist.PermittedHost).ToArray();
+                }
+            }
+
+            if (validHostsQuery.Count() == 0)
+                throw new Exception("Submitted host list is empty!");
+
+            // Execute
+            WriteVerbose("Adding " + validHostsQuery.Count() + " hosts...");
+            if (MyInvocation.BoundParameters.ContainsKey("Computer"))
+            {
+                RemoteAddSNMPHosts(validHostsQuery, Computer, Credential);
+
+                WriteVerbose("Retrieving list of current SNMP Hosts from Computer: " + Computer);
+                SNMPHosts = RemoteGetSNMPHosts(Computer, Credential);
+            }
+            else
+            {
+                AddSNMPHosts(validHostsQuery);
+
+                WriteVerbose("Retrieving list of current SNMP Hosts...");
+                SNMPHosts = GetSNMPHosts();
+            }
+
+            // Confirm
+            LowerHost = Array.ConvertAll(validHostsQuery, host => host.ToLower());
+
+            SNMPHosts = SNMPHosts.Where(host => LowerHost.Contains(host.PermittedHost.ToLower()));
+
+            if (SNMPHosts.Count() == validHostsQuery.Count())
+            {
+                WriteObject("Successfully added all valid Permitted Hosts");
+            }
+            else if (SNMPHosts.Count() > 0)
+            {
+                string[] hostArr = SNMPHosts.Select(host => host.PermittedHost.ToLower()).ToArray();
+                foreach (string host in validHostsQuery)
+                {
+                    bool Match = hostArr.Contains(host);
+                    if (Match == false)
+                    {
+                        WriteObject("Failed to add Permitted Host: " + host);
+                    }
+                }
+            }
+            else
+            {
+                throw new Exception("Failed to add specified SNMP Permitted Hosts");
+            }
+
+            SNMPHosts.ToList().ForEach(WriteObject);
         }
 
         private static void AddSNMPHosts(string[] Hosts)
@@ -136,7 +136,7 @@ namespace AddSNMPHost.cmd
 
             RegHosts = Registry.LocalMachine.CreateSubKey(common.RegHosts);
             int val = 1;
-            String Value;
+            string Value;
             bool valExist = true;
             foreach (var Host in Hosts)
             {
@@ -152,6 +152,60 @@ namespace AddSNMPHost.cmd
                 val = 1;
             }
             RegHosts.Close();
+        }
+
+        private static void RemoteAddSNMPHosts(string[] Hosts, string Computer, PSCredential Credential)
+        {
+            SNMPAgentCommon common = new SNMPAgentCommon();
+            List<int> valueNames = new List<int>();
+
+            ManagementClass mc = SNMPAgentCommon.RemoteConnect(Computer, Credential);
+
+            ManagementBaseObject mboIn = mc.GetMethodParameters("EnumValues");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegHosts;
+
+            ManagementBaseObject mboOut = mc.InvokeMethod("EnumValues", mboIn, null);
+            string[] strValueNames = (string[])mboOut["sNames"];
+
+            mboIn.Dispose();
+            mboOut.Dispose();
+
+            if (strValueNames != null)
+            {
+                foreach (string ValueName in strValueNames)
+                {
+                    if (ValueName != "(Default)")
+                    {
+                        valueNames.Add(Convert.ToInt32(ValueName));
+                    }
+                }
+            }
+
+            mboIn = mc.GetMethodParameters("SetStringValue");
+            mboIn["hDefKey"] = (UInt32)2147483650;
+            mboIn["sSubKeyName"] = common.RegHosts;
+
+            int val = 1;
+            string Value;
+            bool valExist = strValueNames != null;
+
+            foreach (var Host in Hosts)
+            {
+                while (valExist == true)
+                {
+                    valExist = valueNames.Contains(val);
+                    if (valExist == true) { val++; }
+                }
+                Value = Convert.ToString(val);
+                mboIn["sValueName"] = Value;
+                mboIn["sValue"] = Host;
+                mc.InvokeMethod("SetStringValue", mboIn, null);
+                valExist = true;
+                val = 1;
+            }
+
+            mboIn.Dispose();
         }
     }
 }

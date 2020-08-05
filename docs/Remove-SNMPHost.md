@@ -12,15 +12,19 @@ Remove SNMP Permitted Hosts
 
 ## SYNTAX
 
+### Default
+```
+Remove-SNMPHost -PermittedHost <String[]> [<CommonParameters>]
+```
+
 ### RemoveAll
 ```
-Remove-SNMPHost -PermittedHost <String[]> [-RemoveAllHosts] [<CommonParameters>]
+Remove-SNMPHost [-RemoveAllHosts] [<CommonParameters>]
 ```
 
 ### Remote
 ```
-Remove-SNMPHost -PermittedHost <String[]> [-Computer <String>] [-Credential <PSCredential>]
- [<CommonParameters>]
+Remove-SNMPHost [-Computer <String>] [-Credential <PSCredential>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -57,7 +61,7 @@ Remove SNMP Permitted Managers
 
 ```yaml
 Type: String[]
-Parameter Sets: (All)
+Parameter Sets: Default
 Aliases: Hosts, Host, Manager, PermittedManager
 
 Required: True
