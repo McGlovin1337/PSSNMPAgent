@@ -1,7 +1,7 @@
 # PSSNMPAgent
 
 ## About
-Powershell Module to Manage Windows SNMP Agent Service
+Powershell Module to Manage Windows SNMP Agent Service on local and remote computers (via WMI)
 
 This Powershell Module provides the following Cmdlets:
 
@@ -35,4 +35,9 @@ Import-Module PSSNMPAgent
 The module includes help for each Cmdlet with Examples, simply use Get-Help, e.g.
 ```powershell
 Get-Help Get-SNMPCommunity -Full
+```
+
+Many of the Cmdlets support Pipelining, therefore configuration from one computer can be merged to another, e.g.
+```powershell
+Get-SNMPCommunity | Add-SNMPCommunity -Computer Computer01 -Credential username
 ```
