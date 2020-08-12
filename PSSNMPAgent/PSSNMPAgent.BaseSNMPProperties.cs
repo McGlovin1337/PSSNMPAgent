@@ -66,21 +66,19 @@ namespace PSSNMPAgent.SNMPPropertyCmdlets
             RegRFC.Close();
             RegRoot.Close();
 
-            bool SvcPhy = false, SvcDat = false, SvcInt = false, SvcEnd = false, SvcApp = false;
+            bool SvcPhy, SvcDat, SvcInt, SvcEnd, SvcApp;
 
-            if (SvcValue >= 64)
-            {
-                SvcApp = true;
-                SvcValue = SvcValue - 64;
-            }
-            SvcEnd = (SvcValue >= 8 && SvcValue < 64) ? true : false;
-            if (SvcValue == 1 || SvcValue == 9) { SvcPhy = true; }
-            if (SvcValue == 2 || SvcValue == 10) { SvcDat = true; }
-            if (SvcValue == 4 || SvcValue == 12) { SvcInt = true; }
-            if (SvcValue == 3 || SvcValue == 11) { SvcPhy = true; SvcDat = true; }
-            if (SvcValue == 5 || SvcValue == 13) { SvcPhy = true; SvcInt = true; }
-            if (SvcValue == 6 || SvcValue == 14) { SvcDat = true; SvcInt = true; }
-            if (SvcValue == 7 || SvcValue == 15) { SvcPhy = true; SvcDat = true; SvcInt = true; }
+            const int _svcPhy = 1;
+            const int _svcDat = 2;
+            const int _svcInt = 4;
+            const int _svcEnd = 8;
+            const int _svcApp = 64;
+
+            SvcPhy = ((SvcValue & _svcPhy) > 0) ? true : false;
+            SvcDat = ((SvcValue & _svcDat) > 0) ? true : false;
+            SvcInt = ((SvcValue & _svcInt) > 0) ? true : false;
+            SvcEnd = ((SvcValue & _svcEnd) > 0) ? true : false;
+            SvcApp = ((SvcValue & _svcApp) > 0) ? true : false;
 
             properties.Add(new SNMPProperties
             {
@@ -153,21 +151,19 @@ namespace PSSNMPAgent.SNMPPropertyCmdlets
             mboOut4.Dispose();
             mboOut5.Dispose();
 
-            bool SvcPhy = false, SvcDat = false, SvcInt = false, SvcEnd = false, SvcApp = false;
+            bool SvcPhy, SvcDat, SvcInt, SvcEnd, SvcApp;
 
-            if (SvcValue >= 64)
-            {
-                SvcApp = true;
-                SvcValue = SvcValue - 64;
-            }
-            SvcEnd = (SvcValue >= 8 && SvcValue < 64) ? true : false;
-            if (SvcValue == 1 || SvcValue == 9) { SvcPhy = true; }
-            if (SvcValue == 2 || SvcValue == 10) { SvcDat = true; }
-            if (SvcValue == 4 || SvcValue == 12) { SvcInt = true; }
-            if (SvcValue == 3 || SvcValue == 11) { SvcPhy = true; SvcDat = true; }
-            if (SvcValue == 5 || SvcValue == 13) { SvcPhy = true; SvcInt = true; }
-            if (SvcValue == 6 || SvcValue == 14) { SvcDat = true; SvcInt = true; }
-            if (SvcValue == 7 || SvcValue == 15) { SvcPhy = true; SvcDat = true; SvcInt = true; }
+            const int _svcPhy = 1;
+            const int _svcDat = 2;
+            const int _svcInt = 4;
+            const int _svcEnd = 8;
+            const int _svcApp = 64;
+
+            SvcPhy = ((SvcValue & _svcPhy) > 0) ? true : false;
+            SvcDat = ((SvcValue & _svcDat) > 0) ? true : false;
+            SvcInt = ((SvcValue & _svcInt) > 0) ? true : false;
+            SvcEnd = ((SvcValue & _svcEnd) > 0) ? true : false;
+            SvcApp = ((SvcValue & _svcApp) > 0) ? true : false;
 
             properties.Add(new SNMPProperties
             {
